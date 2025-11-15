@@ -1,21 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-// ===== IMPORT SEMUA SCREEN =====
-import '../screens/splash_screen.dart';
-import '../screens/login_registrasi/signin_screen.dart';
-import '../screens/login_registrasi/signup_screen.dart';
-import '../screens/login_registrasi/otp_screen.dart';
-import '../screens/login_registrasi/identitas_screen.dart';
-import '../screens/login_registrasi/kontak_screen.dart';
-import '../screens/login_registrasi/berhasil_screen.dart';
+// ====== ONBOARDING ======
+import '../screens/onboarding/splash_screen.dart';
+import '../screens/onboarding/welcome_screen.dart';
 
-import '../screens/home_screen.dart';
-import '../screens/main_navigation.dart'; // controller bottom nav
+// ====== AUTH ======
+import '../screens/auth/signin_screen.dart';
+import '../screens/auth/signup_screen.dart';
+import '../screens/auth/otp_screen.dart';
+import '../screens/auth/identitas_screen.dart';
+import '../screens/auth/kontak_screen.dart';
+import '../screens/auth/berhasil_screen.dart';
 
-// ===== ROUTE NAMES & PATHS DALAM SATU TEMPAT =====
+// ====== MAIN ======
+import '../screens/main/main_navigation_screen.dart';
+import '../screens/main/notification_screen.dart';
+
 class AppRoutes {
+  // ONBOARDING
   static const String splash = '/';
+  static const String welcome = '/welcome';
+
+  // AUTH
   static const String signIn = '/signin';
   static const String signUp = '/signup';
   static const String otp = '/otp';
@@ -23,94 +30,85 @@ class AppRoutes {
   static const String kontak = '/kontak';
   static const String berhasil = '/berhasil';
 
-  // ===== HALAMAN UTAMA NAVIGASI =====
+  // MAIN (HANYA INI YANG DIPAKAI)
   static const String mainNav = '/main';
-  static const String home = '/home';
 }
 
-// ===== ROUTER FINAL TANPA ERROR =====
 GoRouter createRouter() {
   return GoRouter(
     initialLocation: AppRoutes.splash,
 
     routes: [
+      // =====================================================
+      // ONBOARDING
+      // =====================================================
       GoRoute(
-        name: 'splash',
         path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
       ),
-
       GoRoute(
-        name: 'signin',
+        path: AppRoutes.welcome,
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+
+      // =====================================================
+      // AUTH
+      // =====================================================
+      GoRoute(
         path: AppRoutes.signIn,
         builder: (context, state) => const SignInScreen(),
       ),
-
       GoRoute(
-        name: 'signup',
         path: AppRoutes.signUp,
         builder: (context, state) => const SignUpScreen(),
       ),
-
       GoRoute(
-        name: 'otp',
         path: AppRoutes.otp,
         builder: (context, state) => const OtpScreen(),
       ),
-
       GoRoute(
-        name: 'identitas',
         path: AppRoutes.identitas,
         builder: (context, state) => const IdentitasScreen(),
       ),
-
       GoRoute(
-        name: 'kontak',
         path: AppRoutes.kontak,
         builder: (context, state) => const KontakScreen(),
       ),
-
       GoRoute(
-        name: 'berhasil',
         path: AppRoutes.berhasil,
         builder: (context, state) => const BerhasilScreen(),
       ),
-
-      // =============================
-      // HALAMAN UTAMA DENGAN BOTTOM NAV
-      // =============================
       GoRoute(
-        name: 'main',
+        path: '/notifikasi',
+        builder: (context, state) => const NotificationScreen(),
+      ),
+
+      // =====================================================
+      // MAIN NAVIGATION (SATU-SATUNYA MAIN ROUTE)
+      // =====================================================
+      GoRoute(
         path: AppRoutes.mainNav,
         builder: (context, state) => const MainNavigationScreen(),
       ),
-
-      // Optional: akses HomeScreen saja (bukan disarankan)
-      GoRoute(
-        name: 'home',
-        path: AppRoutes.home,
-        builder: (context, state) => const HomeScreen(),
-      ),
     ],
 
-    // ===== 404 PAGE =====
     errorBuilder: (context, state) => Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.error, color: Colors.red, size: 70),
-            const SizedBox(height: 15),
+            const SizedBox(height: 12),
             const Text(
               "404 - Page Tidak Ditemukan",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Text(state.uri.toString()),
-            const SizedBox(height: 15),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => context.go(AppRoutes.splash),
               child: const Text("Kembali ke Awal"),
-            )
+            ),
           ],
         ),
       ),

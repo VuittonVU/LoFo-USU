@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../config/routes.dart';
+import '../../config/routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,10 +15,8 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    // 5 detik lalu pindah ke Sign In
-    Timer(const Duration(seconds: 5), () {
-      if (!mounted) return;
-      context.go(AppRoutes.signIn);
+    Timer(const Duration(seconds: 2), () {
+      if (mounted) context.go(AppRoutes.welcome);
     });
   }
 
@@ -30,10 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Colors.white,
-              Color(0xFFB6E3B6), // hijau muda
-            ],
+            colors: [Colors.white, Color(0xFFB6E3B6)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -41,13 +36,14 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 40),
+
+            // Logo + Text
             Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
-                  'assets/logo.png', // pastikan file ini ada
-                  width: 180,
+                  "assets/logo.png",
+                  width: 165,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 20),
@@ -56,19 +52,20 @@ class _SplashScreenState extends State<SplashScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.black54,
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
+
             const Padding(
               padding: EdgeInsets.only(bottom: 40),
               child: CircularProgressIndicator(
-                color: Colors.green,
+                color: Color(0xFF4CAF50),
                 strokeWidth: 3,
               ),
-            ),
+            )
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'item_status_badge.dart';
 
 class ItemCard extends StatelessWidget {
   final String imagePath;
@@ -16,97 +17,74 @@ class ItemCard extends StatelessWidget {
     required this.status,
   });
 
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'aktif':
-        return const Color(0xFF3FAE43); // green
-      case 'dalam proses':
-        return const Color(0xFFD8A200); // yellow
-      case 'selesai':
-        return const Color(0xFF006D40); // dark green
-      default:
-        return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 8, // ⬅️ DARI 12 → 8 (gap antar card lebih kecil)
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 10, // ⬅️ DARI 14 → 10 (lebih proporsional)
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black,
-            blurRadius: 6,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
             offset: const Offset(0, 3),
           )
         ],
       ),
+
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// IMAGE
+          // FOTO BARANG
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.asset(
               imagePath,
-              width: 105,
-              height: 105,
+              width: 110,
+              height: 110,
               fit: BoxFit.cover,
             ),
           ),
+
           const SizedBox(width: 14),
 
-          /// TEXTS
+          // TEXT AREA
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// TITLE + STATUS BADGE
+                // TITLE + STATUS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-
-                    // STATUS BADGE
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _statusColor(status),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                    Expanded(
                       child: Text(
-                        status,
+                        title,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    )
+                    ),
+                    ItemStatusBadge(status: status),
                   ],
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6), // ⬅️ DARI 8 → 6 (lebih rapat)
 
                 Text(
                   fakultas,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: Colors.grey.shade700,
                   ),
                 ),
 
@@ -114,9 +92,9 @@ class ItemCard extends StatelessWidget {
 
                 Text(
                   tanggal,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
                   ),
                 ),
               ],
