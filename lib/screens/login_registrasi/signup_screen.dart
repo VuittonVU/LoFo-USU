@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../config/routes.dart';
+import '../../config/routes.dart';
 
-class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
   bool showPassword = false;
+  bool showConfirmPassword = false;
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +25,8 @@ class _SignInScreenState extends State<SignInScreen> {
             children: [
               const SizedBox(height: 10),
 
-              // Back to splash kalau mau
               GestureDetector(
-                onTap: () => context.go(AppRoutes.splash),
+                onTap: () => context.go(AppRoutes.signIn),
                 child: const Icon(
                   Icons.arrow_back_ios_new,
                   color: Color(0xFF2F9E44),
@@ -56,7 +56,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
 
               const Text(
                 "Email USU",
@@ -72,7 +72,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 obscure: false,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               const Text(
                 "Password",
@@ -87,8 +87,9 @@ class _SignInScreenState extends State<SignInScreen> {
                 icon: Icons.lock,
                 obscure: !showPassword,
                 suffix: GestureDetector(
-                  onTap: () =>
-                      setState(() => showPassword = !showPassword),
+                  onTap: () {
+                    setState(() => showPassword = !showPassword);
+                  },
                   child: Icon(
                     showPassword
                         ? Icons.visibility_off
@@ -98,14 +99,39 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
               ),
 
+              const SizedBox(height: 18),
+
+              const Text(
+                "Konfirmasi Password",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _inputField(
+                hint: "Konfirmasi password",
+                icon: Icons.lock,
+                obscure: !showConfirmPassword,
+                suffix: GestureDetector(
+                  onTap: () {
+                    setState(() =>
+                    showConfirmPassword = !showConfirmPassword);
+                  },
+                  child: Icon(
+                    showConfirmPassword
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 35),
 
-              // Tombol Masuk (sementara langsung ke Berhasil)
+              // Tombol daftar -> OTP
               GestureDetector(
-                onTap: () {
-                  // nanti bisa diganti logic login beneran
-                  context.go(AppRoutes.berhasil);
-                },
+                onTap: () => context.go(AppRoutes.otp),
                 child: Container(
                   width: double.infinity,
                   height: 55,
@@ -115,7 +141,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   child: const Center(
                     child: Text(
-                      "Masuk",
+                      "Daftar",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -126,23 +152,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // Link ke Sign Up
-              Center(
-                child: TextButton(
-                  onPressed: () => context.go(AppRoutes.signUp),
-                  child: const Text(
-                    "Belum punya akun? Daftar",
-                    style: TextStyle(
-                      color: Color(0xFF2F9E44),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -171,9 +181,13 @@ class _SignInScreenState extends State<SignInScreen> {
           Expanded(
             child: TextField(
               obscureText: obscure,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                hintText: hint,
                 border: InputBorder.none,
-                hintText: "",
+                hintStyle: const TextStyle(
+                  color: Color(0xFF5A5A5A),
+                  fontSize: 15,
+                ),
               ),
             ),
           ),
