@@ -10,22 +10,27 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: const Color(0xFF4CAF50),
-      elevation: 0,
-      centerTitle: true,
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+    return Container(
+      height: 90, // match HomeScreen
+      width: double.infinity,
+      color: const Color(0xFF4CAF50),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SafeArea(
+        bottom: false,
+        child: Center(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 21,       // match HomeScreen
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ),
     );
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize => const Size.fromHeight(90);
 }

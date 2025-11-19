@@ -62,6 +62,7 @@ flutter:
   assets:
     - assets/logo.png
     - assets/icons/back.png
+    - assets/icons/filter.png
     - assets/images/dompet1.png
     - assets/images/dompet2.png
     - assets/images/dompet3.png

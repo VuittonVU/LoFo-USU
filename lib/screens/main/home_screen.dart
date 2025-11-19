@@ -14,49 +14,52 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           // =========================================================
-          //   CUSTOM TOP BAR KHUSUS HOMEPAGE
+          //   TOP BAR BARU (DISAMAKAN DENGAN SEARCH SCREEN)
           // =========================================================
           Container(
-            height: 85,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            height: 90, // sama dengan SearchScreen
+            width: double.infinity,
             decoration: const BoxDecoration(
               color: Color(0xFF4CAF50),
             ),
             child: SafeArea(
               bottom: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // EXIT ICON
-                  GestureDetector(
-                    onTap: () => context.go(AppRoutes.welcome),
-                    child: const Icon(
-                      Icons.exit_to_app,
-                      color: Colors.white,
-                      size: 32,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // EXIT
+                    GestureDetector(
+                      onTap: () => context.go(AppRoutes.welcome),
+                      child: const Icon(
+                        Icons.exit_to_app,
+                        color: Colors.white,
+                        size: 30, // selaras dengan search top bar scale
+                      ),
                     ),
-                  ),
 
-                  // TITLE
-                  const Text(
-                    "LoFo USU",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
+                    // TITLE (diselaraskan)
+                    const Text(
+                      "LoFo USU",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 21,           // sama seperti SearchScreen
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
 
-                  // NOTIFICATION ICON
-                  GestureDetector(
-                    onTap: () => context.go('/notifikasi'),
-                    child: const Icon(
-                      Icons.notifications_none,
-                      color: Colors.white,
-                      size: 32,
+                    // NOTIFICATION
+                    GestureDetector(
+                      onTap: () => context.go('/notifikasi'),
+                      child: const Icon(
+                        Icons.notifications_none,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

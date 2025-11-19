@@ -16,22 +16,24 @@ import '../screens/auth/berhasil_screen.dart';
 // ====== MAIN ======
 import '../screens/main/main_navigation_screen.dart';
 import '../screens/main/notification_screen.dart';
+import '../screens/main/filter_screen.dart';
 
 class AppRoutes {
-  // ONBOARDING
-  static const String splash = '/';
-  static const String welcome = '/welcome';
+  static const String splash    = '/';
+  static const String welcome   = '/welcome';
 
   // AUTH
-  static const String signIn = '/signin';
-  static const String signUp = '/signup';
-  static const String otp = '/otp';
+  static const String signIn    = '/signin';
+  static const String signUp    = '/signup';
+  static const String otp       = '/otp';
   static const String identitas = '/identitas';
-  static const String kontak = '/kontak';
-  static const String berhasil = '/berhasil';
+  static const String kontak    = '/kontak';
+  static const String berhasil  = '/berhasil';
 
-  // MAIN (HANYA INI YANG DIPAKAI)
-  static const String mainNav = '/main';
+  // MAIN
+  static const String mainNav   = '/main';
+  static const String notif     = '/notifikasi';
+  static const String filter    = '/filter';
 }
 
 GoRouter createRouter() {
@@ -39,59 +41,83 @@ GoRouter createRouter() {
     initialLocation: AppRoutes.splash,
 
     routes: [
-      // =====================================================
+      // ============================
       // ONBOARDING
-      // =====================================================
+      // ============================
       GoRoute(
         path: AppRoutes.splash,
-        builder: (context, state) => const SplashScreen(),
+        builder: (_, __) => const SplashScreen(),
       ),
       GoRoute(
         path: AppRoutes.welcome,
-        builder: (context, state) => const WelcomeScreen(),
+        builder: (_, __) => const WelcomeScreen(),
       ),
 
-      // =====================================================
+      // ============================
       // AUTH
-      // =====================================================
+      // ============================
       GoRoute(
         path: AppRoutes.signIn,
-        builder: (context, state) => const SignInScreen(),
+        builder: (_, __) => const SignInScreen(),
       ),
       GoRoute(
         path: AppRoutes.signUp,
-        builder: (context, state) => const SignUpScreen(),
+        builder: (_, __) => const SignUpScreen(),
       ),
       GoRoute(
         path: AppRoutes.otp,
-        builder: (context, state) => const OtpScreen(),
+        builder: (_, __) => const OtpScreen(),
       ),
       GoRoute(
         path: AppRoutes.identitas,
-        builder: (context, state) => const IdentitasScreen(),
+        builder: (_, __) => const IdentitasScreen(),
       ),
       GoRoute(
         path: AppRoutes.kontak,
-        builder: (context, state) => const KontakScreen(),
+        builder: (_, __) => const KontakScreen(),
       ),
       GoRoute(
         path: AppRoutes.berhasil,
-        builder: (context, state) => const BerhasilScreen(),
-      ),
-      GoRoute(
-        path: '/notifikasi',
-        builder: (context, state) => const NotificationScreen(),
+        builder: (_, __) => const BerhasilScreen(),
       ),
 
-      // =====================================================
-      // MAIN NAVIGATION (SATU-SATUNYA MAIN ROUTE)
-      // =====================================================
+      // ============================
+      // NOTIFIKASI
+      // ============================
+      GoRoute(
+        path: AppRoutes.notif,
+        builder: (_, __) => const NotificationScreen(),
+      ),
+
+      // ============================
+      // FILTER
+      // ============================
+      GoRoute(
+        path: AppRoutes.filter,
+        builder: (_, __) => const FilterScreen(),
+      ),
+
+      // ============================
+      // MAIN NAVIGATION
+      // ============================
       GoRoute(
         path: AppRoutes.mainNav,
-        builder: (context, state) => const MainNavigationScreen(),
+        builder: (context, state) {
+          final p = state.uri.queryParameters;
+
+          return MainNavigationScreen(
+            startIndex: int.tryParse(p["startIndex"] ?? "0") ?? 0,
+            kategori: p["kategori"],
+            lokasi:   p["lokasi"],
+            urutan:   p["urutan"],
+          );
+        },
       ),
     ],
 
+    // ============================
+    // ERROR PAGE
+    // ============================
     errorBuilder: (context, state) => Scaffold(
       body: Center(
         child: Column(

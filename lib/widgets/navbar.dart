@@ -15,9 +15,6 @@ class MainNavigationBar extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // =====================================================
-        // NAVBAR BACKGROUND
-        // =====================================================
         Container(
           height: 76,
           decoration: const BoxDecoration(
@@ -26,18 +23,15 @@ class MainNavigationBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _navItem(Icons.home, 0),
-              _navItem(Icons.search, 1),
-              const SizedBox(width: 60), // space di tengah utk FAB
-              _navItem(Icons.access_time, 3),
-              _navItem(Icons.person, 4),
+              _navIcon(Icons.home, 0),
+              _navIcon(Icons.search, 1),
+              const SizedBox(width: 60),
+              _navIcon(Icons.access_time, 3),
+              _navIcon(Icons.person, 4),
             ],
           ),
         ),
 
-        // =====================================================
-        // FLOATING ACTION BUTTON
-        // =====================================================
         Positioned(
           top: -32,
           left: 0,
@@ -47,9 +41,9 @@ class MainNavigationBar extends StatelessWidget {
               onTap: () => onTap(2),
               child: Container(
                 width: 82,
-                height: 82,
+                height: 75,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF43A047), // hijau gelap
+                  color: const Color(0xFF4CAF50), // hijau LoFo USU
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -57,7 +51,7 @@ class MainNavigationBar extends StatelessWidget {
                       blurRadius: 18,
                       spreadRadius: 2,
                       offset: const Offset(0, 6),
-                    ),
+                    )
                   ],
                 ),
                 child: const Icon(
@@ -73,24 +67,18 @@ class MainNavigationBar extends StatelessWidget {
     );
   }
 
-  // =====================================================
-  // NAV ITEM (DENGAN EFFECT ACTIVE BORDER)
-  // =====================================================
-  Widget _navItem(IconData icon, int current) {
-    final bool active = index == current && current != 2;
+  Widget _navIcon(IconData icon, int i) {
+    final bool active = (index == i);
 
     return GestureDetector(
-      onTap: () => onTap(current),
+      onTap: () => onTap(i),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.symmetric(
-          horizontal: active ? 14 : 0,
-          vertical: active ? 10 : 0,
-        ),
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(6),
         decoration: active
             ? BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
           border: Border.all(color: Colors.white, width: 3),
+          borderRadius: BorderRadius.circular(30),
         )
             : null,
         child: Icon(
