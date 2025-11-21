@@ -19,7 +19,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.white,
-        // fontFamily: null, // pakai default system font dulu
       ),
       routerConfig: router,
     );

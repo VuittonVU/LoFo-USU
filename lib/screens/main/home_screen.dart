@@ -72,44 +72,72 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.only(top: 20, bottom: 100),
               children: [
                 _bigCard(
-                  child: const ItemCard(
+                  child: ItemCard(
+                    images: const [
+                      'assets/images/dompet1.png',
+                      'assets/images/dompet2.png',
+                    ],
                     imagePath: 'assets/images/dompet1.png',
                     title: 'Dompet',
                     fakultas: 'FISIP',
                     tanggal: '25 September 2025',
                     status: 'Aktif',
+                    kategori: 'Dompet',
+                    deskripsi:
+                    'Ditemukan sebuah dompet merek fossil berwarna coklat di area gedung A Fakultas Ilmu Sosial dan Politik',
                   ),
                 ),
+
                 _bigCard(
-                  child: const ItemCard(
+                  child: ItemCard(
+                    images: const [
+                      'assets/images/dompet1.png',
+                    ],
                     imagePath: 'assets/images/dompet1.png',
                     title: 'Kartu',
                     fakultas: 'Teknik',
                     tanggal: '1 Juli 2025',
                     status: 'Dalam Proses',
+                    kategori: 'Kartu Identitas',
+                    deskripsi:
+                    'Kartu identitas mahasiswa ditemukan di area gedung Teknik.',
                   ),
                 ),
+
                 _bigCard(
-                  child: const ItemCard(
+                  child: ItemCard(
+                    images: const [
+                      'assets/images/dompet2.png',
+                    ],
                     imagePath: 'assets/images/dompet2.png',
                     title: 'Dompet',
                     fakultas: 'FIB',
                     tanggal: '22 Mei 2025',
                     status: 'Selesai',
+                    kategori: 'Dompet',
+                    deskripsi:
+                    'Dompet warna hitam ditemukan di sekitar gedung Fakultas Ilmu Budaya.',
                   ),
                 ),
+
                 _bigCard(
-                  child: const ItemCard(
+                  child: ItemCard(
+                    images: const [
+                      'assets/images/dompet3.png',
+                    ],
                     imagePath: 'assets/images/dompet3.png',
                     title: 'Dompet',
                     fakultas: 'FEB',
                     tanggal: '4 April 2025',
                     status: 'Selesai',
+                    kategori: 'Dompet',
+                    deskripsi:
+                    'Dompet merah ditemukan dekat kantin Fakultas Ekonomi dan Bisnis.',
                   ),
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );

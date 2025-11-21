@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../widgets/navbar.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
@@ -35,14 +37,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       const HomeScreen(),
 
-      // Search menerima filter (ALLOW NULL)
       SearchScreen(
         kategori: widget.kategori ?? "",
         lokasi: widget.lokasi ?? "",
         urutan: widget.urutan ?? "",
       ),
 
-      const Center(child: Text("Add Item")),
+      // index 2 = tombol PLUS → tidak dipakai
+      const SizedBox.shrink(),
+
       const Center(child: Text("History")),
       const Center(child: Text("Profile")),
     ];
@@ -53,7 +56,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: MainNavigationBar(
         index: index,
         onTap: (i) {
-          if (i == index) return; // ignore jika tekan tab yg sama
+          // ----------- HANDLE TOMBOL PLUS -----------
+          if (i == 2) {
+            context.go('/add-laporan');   // route yang kita buat
+            return;
+          }
+
+          // NORMAL NAVIGATION
           setState(() => index = i);
         },
       ),

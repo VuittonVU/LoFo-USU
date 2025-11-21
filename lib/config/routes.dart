@@ -17,6 +17,8 @@ import '../screens/auth/berhasil_screen.dart';
 import '../screens/main/main_navigation_screen.dart';
 import '../screens/main/notification_screen.dart';
 import '../screens/main/filter_screen.dart';
+import '../screens/main/add_new_laporan.dart';
+import '../screens/main/laporan_aktif_screen_pelapor.dart';
 
 class AppRoutes {
   static const String splash    = '/';
@@ -34,6 +36,9 @@ class AppRoutes {
   static const String mainNav   = '/main';
   static const String notif     = '/notifikasi';
   static const String filter    = '/filter';
+  static const String addLaporan = '/add-laporan';
+  static const String laporanAktif = '/laporan-aktif';
+
 }
 
 GoRouter createRouter() {
@@ -95,6 +100,35 @@ GoRouter createRouter() {
       GoRoute(
         path: AppRoutes.filter,
         builder: (_, __) => const FilterScreen(),
+      ),
+
+      // ============================
+      // ADD LAPORAN
+      // ============================
+      GoRoute(
+        path: AppRoutes.addLaporan,
+        builder: (_, __) => const AddLaporanScreen(),
+      ),
+
+      // ============================
+      // LAPORAN AKTIF (Detail Item)
+      // ============================
+      GoRoute(
+        path: AppRoutes.laporanAktif,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+
+          return ItemDetailScreen(
+            images: data?["images"] ?? [],
+            title: data?["title"] ?? "-",
+            reporterName: data?["reporterName"] ?? "-",
+            dateFound: data?["dateFound"] ?? "-",
+            locationFound: data?["locationFound"] ?? "-",
+            category: data?["category"] ?? "-",
+            description: data?["description"] ?? "-",
+            status: data?["status"] ?? "Aktif",
+          );
+        },
       ),
 
       // ============================

@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 class SearchScreen extends StatefulWidget {
   final String kategori;
   final String lokasi;
-  final String urutan; // Terbaru / A-Z / Z-A
+  final String urutan;
 
   const SearchScreen({
     super.key,
@@ -22,7 +22,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchCtrl = TextEditingController();
 
-  // Dummy items
+  // =======================================================
+  // DUMMY DATA (SUDAH DITAMBAH DESKRIPSI)
+  // =======================================================
   final List<Map<String, String>> items = [
     {
       "title": "Dompet",
@@ -31,6 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
       "tanggal": "25 September 2025",
       "status": "Aktif",
       "image": "assets/images/dompet1.png",
+      "deskripsi": "Dompet coklat ditemukan di area FISIP gedung A.",
     },
     {
       "title": "Kartu Identitas",
@@ -39,6 +42,7 @@ class _SearchScreenState extends State<SearchScreen> {
       "tanggal": "1 Juli 2025",
       "status": "Dalam Proses",
       "image": "assets/images/dompet2.png",
+      "deskripsi": "Kartu identitas mahasiswa ditemukan di Fakultas Teknik.",
     },
     {
       "title": "Dompet",
@@ -47,6 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
       "tanggal": "22 Mei 2025",
       "status": "Selesai",
       "image": "assets/images/dompet3.png",
+      "deskripsi": "Dompet hitam ditemukan di Fakultas Ilmu Budaya.",
     },
   ];
 
@@ -78,12 +83,11 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // =======================================================
-  // FILTERED LIST LOGIC
+  // FILTERED ITEMS
   // =======================================================
   List<Map<String, String>> get filteredItems {
     List<Map<String, String>> result = [...items];
 
-    // Search text
     if (searchCtrl.text.isNotEmpty) {
       result = result
           .where((i) => i["title"]!
@@ -92,29 +96,19 @@ class _SearchScreenState extends State<SearchScreen> {
           .toList();
     }
 
-    // Filter kategori
     if (widget.kategori.isNotEmpty) {
-      result =
-          result.where((i) => i["kategori"] == widget.kategori).toList();
+      result = result.where((i) => i["kategori"] == widget.kategori).toList();
     }
 
-    // Filter lokasi
     if (widget.lokasi.isNotEmpty) {
-      result =
-          result.where((i) => i["lokasi"] == widget.lokasi).toList();
+      result = result.where((i) => i["lokasi"] == widget.lokasi).toList();
     }
 
-    // =======================================================
-    // SORTING
-    // =======================================================
     if (widget.urutan == "A-Z") {
       result.sort((a, b) => a["title"]!.compareTo(b["title"]!));
-    }
-    else if (widget.urutan == "Z-A") {
+    } else if (widget.urutan == "Z-A") {
       result.sort((a, b) => b["title"]!.compareTo(a["title"]!));
-    }
-    else if (widget.urutan == "Terbaru") {
-      // Sort date descending (newest → oldest)
+    } else if (widget.urutan == "Terbaru") {
       result.sort((a, b) =>
           parseTanggal(b["tanggal"]!).compareTo(parseTanggal(a["tanggal"]!)));
     }
@@ -135,9 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           const SizedBox(height: 14),
 
-          // =======================================================
           // SEARCH BAR
-          // =======================================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Container(
@@ -168,15 +160,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
           const SizedBox(height: 16),
 
-          // =======================================================
-          // BIG FILTER BUTTON
-          // =======================================================
+          // FILTER BUTTON
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: GestureDetector(
               onTap: () => context.go("/filter"),
               child: Container(
-                width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: const Color(0xFF4CAF50),
@@ -205,9 +194,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
           const SizedBox(height: 12),
 
-          // =======================================================
-          // RESULTS
-          // =======================================================
+          // LIST RESULT
           Expanded(
             child: results.isEmpty
                 ? const Center(
@@ -229,11 +216,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Transform.scale(
                     scale: 1.085,
                     child: ItemCard(
+                      // Multi-image support
+                      images: [
+                        item["image"]!,
+                      ],
                       imagePath: item["image"]!,
                       title: item["title"]!,
                       fakultas: item["lokasi"]!,
                       tanggal: item["tanggal"]!,
                       status: item["status"]!,
+                      kategori: item["kategori"]!,
+                      deskripsi: item["deskripsi"]!,
                     ),
                   ),
                 );
