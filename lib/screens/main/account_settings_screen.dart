@@ -14,7 +14,6 @@ class AccountSettingsScreen extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
           ElevatedButton(onPressed: () {
-            // TODO: lakukan logout (hapus token/shared prefs)
             Navigator.pop(context);
             context.go(AppRoutes.signIn);
           }, child: const Text('Ya')),
@@ -32,7 +31,6 @@ class AccountSettingsScreen extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
           ElevatedButton(onPressed: () {
-            // TODO: panggil API hapus akun
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Akun berhasil dihapus')));
             context.go(AppRoutes.splash);

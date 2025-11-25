@@ -27,8 +27,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _save() {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: kirim update ke API / simpan local
-      // tampilkan sukses dan kembali ke profile
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -64,7 +62,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // avatar + change button (UI only)
               Center(
                 child: Stack(
                   children: [
@@ -74,7 +71,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       right: 0,
                       child: InkWell(
                         onTap: () {
-                          // TODO: pick image
                         },
                         child: Container(
                           padding: const EdgeInsets.all(6),

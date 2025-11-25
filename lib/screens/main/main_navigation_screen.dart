@@ -45,7 +45,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         urutan: widget.urutan ?? "",
       ),
 
-      // index 2 = tombol PLUS → tidak dipakai
       const SizedBox.shrink(),
 
       const ProfileScreen(),

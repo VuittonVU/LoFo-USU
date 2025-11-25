@@ -10,7 +10,6 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // top bar hijau seperti desain
       appBar: AppBar(
         backgroundColor: const Color(0xFF43A047),
         title: const Text('LoFo USU'),
@@ -39,7 +38,6 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
           child: Column(
             children: [
-              // Avatar + nama
               CircleAvatar(
                 radius: 56,
                 backgroundImage: AssetImage('assets/images/avatar_profile.png'),
@@ -53,7 +51,6 @@ class ProfileScreen extends StatelessWidget {
               const Text('231401063', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 18),
 
-              // stats
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
@@ -65,7 +62,6 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              // kontak card
               const ContactCard(
                 phone: '0895-6229-2408',
                 instagram: '@sayudins',
@@ -75,7 +71,6 @@ class ProfileScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // tombol menuju setting (duplikat untuk akses cepat)
               Card(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 child: ListTile(
@@ -92,7 +87,6 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
 
-      // bottom nav (visual) — sesuaikan dengan main_navigation_screen jika perlu
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.go(AppRoutes.addLaporan),
         child: const Icon(Icons.add),
