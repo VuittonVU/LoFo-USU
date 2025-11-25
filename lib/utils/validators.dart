@@ -1,44 +1,26 @@
 class Validators {
-  static String? email(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Email tidak boleh kosong";
+  static String? usuEmail(String value) {
+    if (value.isEmpty) return "Email tidak boleh kosong";
+
+    // Mengizinkan SEMUA email yang berakhiran .usu.ac.id
+    final pattern = RegExp(r".+@(.+\.)?usu\.ac\.id$");
+
+    if (!pattern.hasMatch(value)) {
+      return "Gunakan email resmi USU";
     }
-    if (!value.contains("@") || !value.contains(".")) {
-      return "Email tidak valid";
-    }
+
     return null;
   }
 
-  static String? password(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Password wajib diisi";
-    }
-    if (value.length < 6) {
-      return "Password minimal 6 karakter";
-    }
+  static String? password(String value) {
+    if (value.isEmpty) return "Password tidak boleh kosong";
+    if (value.length < 6) return "Password minimal 6 karakter";
     return null;
   }
 
-  static String? required(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return "Field ini wajib diisi";
-    }
-    return null;
-  }
-
-  static String? usuEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return "Email tidak boleh kosong";
-    }
-
-    final regex = RegExp(
-        r'^[a-zA-Z0-9._%+-]+@(students\.)?usu\.ac\.id$'
-    );
-
-    if (!regex.hasMatch(value.trim())) {
-      return "Gunakan email USU (@usu.ac.id)";
-    }
-
+  static String? confirmPassword(String pass, String confirm) {
+    if (confirm.isEmpty) return "Konfirmasi password wajib diisi";
+    if (confirm != pass) return "Password tidak sama";
     return null;
   }
 }

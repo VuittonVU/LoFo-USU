@@ -5,6 +5,7 @@ import '../../config/routes.dart';
 import '../../services/auth_service.dart';
 import '../../utils/snackbar.dart';
 import '../../utils/validators.dart';
+
 import '../../widgets/lofo_scaffold.dart';
 import '../../widgets/lofo_text_field.dart';
 import '../../widgets/primary_button.dart';
@@ -19,112 +20,131 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+  final _auth = AuthService();
 
-  // ============================================
-  // FUNGSI LOGIN ASYNC (AMAN)
-  // ============================================
+  bool loading = false;
+  bool showPass = false;
+
+  // ============================================================
+  // HANDLE LOGIN
+  // ============================================================
   Future<void> _handleLogin() async {
-    if (!formKey.currentState!.validate()) return;
+    final emailErr = Validators.usuEmail(emailCtrl.text.trim());
+    final passErr = Validators.password(passCtrl.text.trim());
 
-    final result = await AuthService.signIn(
-      email: emailCtrl.text.trim(),
-      password: passCtrl.text.trim(),
+    if (emailErr != null) {
+      LofoSnack.show(context, emailErr, error: true);
+      return;
+    }
+
+    if (passErr != null) {
+      LofoSnack.show(context, passErr, error: true);
+      return;
+    }
+
+    setState(() => loading = true);
+
+    final errorMsg = await _auth.signIn(
+      emailCtrl.text.trim(),
+      passCtrl.text.trim(),
     );
 
-    if (result == "success") {
-      if (!mounted) return;
-      AppSnackbar.show(context, "Login berhasil!");
-      context.go(AppRoutes.mainNav);
-    } else {
-      if (!mounted) return;
-      AppSnackbar.show(context, result, isError: true);
+    if (!mounted) return;
+
+    setState(() => loading = false);
+
+    if (errorMsg != null) {
+      LofoSnack.show(context, errorMsg, error: true);
+      return;
     }
+
+    LofoSnack.show(context, "Login berhasil!");
+
+    // GO TO MAIN
+    context.go(AppRoutes.mainNav);
   }
 
+  // ============================================================
+  // UI
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     return LofoScaffold(
-      child: Form(
-        key: formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: () => context.pop(),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 28,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Center(
+            child: Text(
+              "Halo, sobat USU!",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
                 color: Color(0xFF2F9E44),
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-            const Center(
-              child: Text(
-                "Halo, sobat USU!",
+          Center(
+            child: Image.asset(
+              "assets/logo.png",
+              height: 125,
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // EMAIL INPUT
+          const Text("Email USU"),
+          LofoTextField(
+            controller: emailCtrl,
+            hint: "Masukkan email USU",
+            icon: Icons.person,
+            showInternalLabel: false,
+          ),
+
+          const SizedBox(height: 10),
+
+          // PASSWORD INPUT
+          LofoTextField(
+            label: "Password",
+            hint: "Masukkan password",
+            icon: Icons.lock,
+            controller: passCtrl,
+            obscure: !showPass,
+            showInternalLabel: true,
+            suffix: GestureDetector(
+              onTap: () => setState(() => showPass = !showPass),
+              child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+            ),
+          ),
+
+          const SizedBox(height: 35),
+
+          // LOGIN BUTTON
+          PrimaryButton(
+            text: loading ? "Memproses..." : "Masuk",
+            onPressed: loading ? null : _handleLogin,
+          ),
+
+          const SizedBox(height: 16),
+
+          Center(
+            child: GestureDetector(
+              onTap: () => context.go(AppRoutes.signUp),
+              child: const Text(
+                "Belum punya akun? Daftar",
                 style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
                   color: Color(0xFF2F9E44),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 16),
-            Center(child: Image.asset("assets/logo.png", height: 125)),
-            const SizedBox(height: 32),
-
-            // ========================= EMAIL =========================
-            const Text("Email USU"),
-            LofoTextField(
-              controller: emailCtrl,
-              hint: "Masukkan email USU",
-              icon: Icons.person,
-              showInternalLabel: false,
-              validator: Validators.usuEmail,
-            ),
-
-            const SizedBox(height: 10),
-
-            // ========================= PASSWORD ======================
-            const Text("Password"),
-            LofoTextField(
-              controller: passCtrl,
-              hint: "Masukkan password",
-              icon: Icons.lock,
-              obscure: true,
-              showInternalLabel: false,
-              validator: Validators.password,
-            ),
-
-            const SizedBox(height: 35),
-
-            // ========================= LOGIN BUTTON ==================
-            PrimaryButton(
-              text: "Masuk",
-              onPressed: _handleLogin, // <-- TIDAK ASYNC
-            ),
-
-            const SizedBox(height: 16),
-
-            Center(
-              child: GestureDetector(
-                onTap: () => context.go(AppRoutes.signUp),
-                child: const Text(
-                  "Belum punya akun? Daftar",
-                  style: TextStyle(
-                    color: Color(0xFF2F9E44),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-          ],
-        ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }

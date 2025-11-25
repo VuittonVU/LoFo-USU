@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/routes.dart';
+import '../../../services/auth_service.dart';
 import '../../../widgets/profile_stats.dart';
 import '../../../widgets/contact_card.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  Future<void> _logout(BuildContext context) async {
+    await AuthService().signOut();
+
+    if (!context.mounted) return;
+
+    // Redirect ke welcome / login
+    context.go(AppRoutes.welcome);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +31,24 @@ class ProfileScreen extends StatelessWidget {
             onSelected: (value) {
               if (value == 'edit') {
                 context.go(AppRoutes.editProfile);
-              } else if (value == 'settings') {
+              }
+              else if (value == 'settings') {
                 context.go(AppRoutes.accountSettings);
+              }
+              else if (value == 'logout') {
+                _logout(context);
               }
             },
             itemBuilder: (ctx) => const [
               PopupMenuItem(value: 'edit', child: Text('Edit Profil')),
               PopupMenuItem(value: 'settings', child: Text('Pengaturan Akun')),
+              PopupMenuItem(
+                value: 'logout',
+                child: Text(
+                  'Logout',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
             ],
           ),
         ],
@@ -40,9 +61,10 @@ class ProfileScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 56,
-                backgroundImage: AssetImage('assets/images/avatar_profile.png'),
+                backgroundImage: const AssetImage('assets/images/avatar_profile.png'),
                 backgroundColor: Colors.grey[200],
               ),
+
               const SizedBox(height: 12),
               const Text('Budi Siregar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
@@ -93,6 +115,7 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF43A047),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 6,
@@ -101,11 +124,23 @@ class ProfileScreen extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              IconButton(onPressed: () => context.go(AppRoutes.mainNav + '?startIndex=0'), icon: const Icon(Icons.home)),
-              IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+              IconButton(
+                onPressed: () => context.go(AppRoutes.mainNav + '?startIndex=0'),
+                icon: const Icon(Icons.home),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const Icon(Icons.search),
+              ),
               const SizedBox(width: 48),
-              IconButton(onPressed: () => context.go(AppRoutes.notif), icon: const Icon(Icons.notifications)),
-              IconButton(onPressed: () => context.go(AppRoutes.profile), icon: const Icon(Icons.person)),
+              IconButton(
+                onPressed: () => context.go(AppRoutes.notif),
+                icon: const Icon(Icons.notifications),
+              ),
+              IconButton(
+                onPressed: () => context.go(AppRoutes.profile),
+                icon: const Icon(Icons.person),
+              ),
             ],
           ),
         ),

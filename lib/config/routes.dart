@@ -8,6 +8,7 @@ import '../screens/onboarding/welcome_screen.dart';
 // ====== AUTH ======
 import '../screens/auth/signin_screen.dart';
 import '../screens/auth/signup_screen.dart';
+import '../screens/auth/EmailVerificationScreen.dart';
 import '../screens/auth/otp_screen.dart';
 import '../screens/auth/identitas_screen.dart';
 import '../screens/auth/kontak_screen.dart';
@@ -78,6 +79,10 @@ GoRouter createRouter() {
       GoRoute(
         path: AppRoutes.signUp,
         builder: (_, __) => const SignUpScreen(),
+      ),
+      GoRoute(
+        path: '/email-verification',
+        builder: (_, __) => const EmailVerificationScreen(),
       ),
       GoRoute(
         path: AppRoutes.otp,
