@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "271733983894",
+    "project_id": "lofo-usu-b8800",
+    "storage_bucket": "lofo-usu-b8800.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:271733983894:android:f64942072687e3c1dad0b7",
+        "android_client_info": {
+          "package_name": "com.example.lofo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaedjVcaiIlAQKMUKfmPcZZViUwRxG4fE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

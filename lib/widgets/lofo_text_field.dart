@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 class LofoTextField extends StatelessWidget {
-  final String? label; // label internal (opsional)
+  final String? label;
   final String hint;
   final IconData icon;
   final bool obscure;
   final Widget? suffix;
-  final bool showInternalLabel; // <-- FIX DOUBLE LABEL
+  final bool showInternalLabel;
   final TextEditingController? controller;
+
+  final String? Function(String?)? validator; // <-- ADD VALIDATOR
 
   const LofoTextField({
     super.key,
@@ -16,8 +18,9 @@ class LofoTextField extends StatelessWidget {
     required this.icon,
     this.obscure = false,
     this.suffix,
-    this.showInternalLabel = false, // default = FALSE biar ga double
+    this.showInternalLabel = false,
     this.controller,
+    this.validator, // <-- ADD VALIDATOR
   });
 
   @override
@@ -25,7 +28,7 @@ class LofoTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // --- INTERNAL LABEL (opsional) ---
+        /// INTERNAL LABEL (opsional)
         if (showInternalLabel && label != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
@@ -39,16 +42,17 @@ class LofoTextField extends StatelessWidget {
             ),
           ),
 
-        // ---- TEXT FIELD ----
+        /// TEXT FORM FIELD
         Container(
           decoration: BoxDecoration(
             color: const Color(0xFFD9D9D9),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: const Color(0xFF38B94E)),
           ),
-          child: TextField(
+          child: TextFormField(
             controller: controller,
             obscureText: obscure,
+            validator: validator, // <-- APPLY VALIDATOR HERE
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(
@@ -58,7 +62,8 @@ class LofoTextField extends StatelessWidget {
               prefixIcon: Icon(icon, color: Colors.grey[800]),
               suffixIcon: suffix,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             ),
           ),
         ),
