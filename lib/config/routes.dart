@@ -20,6 +20,11 @@ import '../screens/main/filter_screen.dart';
 import '../screens/main/add_new_laporan.dart';
 import '../screens/main/laporan_aktif_screen_pelapor.dart';
 
+// ====== PROFILE ======
+import '../screens/main/profile_screen.dart';
+import '../screens/main/edit_profile_screen.dart';
+import '../screens/main/account_settings_screen.dart';
+
 class AppRoutes {
   static const String splash    = '/';
   static const String welcome   = '/welcome';
@@ -38,6 +43,11 @@ class AppRoutes {
   static const String filter    = '/filter';
   static const String addLaporan = '/add-laporan';
   static const String laporanAktif = '/laporan-aktif';
+
+  // PROFILE
+  static const String profile = '/profile';
+  static const String editProfile = '/edit-profile';
+  static const String accountSettings = '/account-settings';
 
 }
 
@@ -146,6 +156,24 @@ GoRouter createRouter() {
             urutan:   p["urutan"],
           );
         },
+      ),
+
+      // ============================
+      // PROFILE
+      // ============================
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (_, __) => const ProfileScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (_, __) => const EditProfileScreen(),
+      ),
+      
+      GoRoute(
+        path: AppRoutes.accountSettings,
+        builder: (_, __) => const AccountSettingsScreen(),
       ),
     ],
 

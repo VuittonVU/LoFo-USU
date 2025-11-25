@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/navbar.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
+import 'profile_screen.dart';
+
 
 class MainNavigationScreen extends StatefulWidget {
   final int startIndex;
@@ -46,8 +48,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       // index 2 = tombol PLUS → tidak dipakai
       const SizedBox.shrink(),
 
+      const ProfileScreen(),
       const Center(child: Text("History")),
-      const Center(child: Text("Profile")),
     ];
 
     return Scaffold(
