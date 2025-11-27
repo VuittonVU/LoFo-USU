@@ -96,15 +96,14 @@ class _SignInScreenState extends State<SignInScreen> {
           const SizedBox(height: 32),
 
           // EMAIL INPUT
-          const Text("Email USU"),
           LofoTextField(
-            controller: emailCtrl,
+            label: "Email USU",
             hint: "Masukkan email USU",
-            icon: Icons.person,
-            showInternalLabel: false,
+            icon: Icons.mail,
+            controller: emailCtrl,
+            showInternalLabel: true,
           ),
-
-          const SizedBox(height: 10),
+          const SizedBox(height: 15),
 
           // PASSWORD INPUT
           LofoTextField(

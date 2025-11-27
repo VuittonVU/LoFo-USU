@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import '../../widgets/top_bar_backbtn.dart';
 
 class AccountSettingsScreen extends StatefulWidget {
   const AccountSettingsScreen({super.key});
@@ -16,7 +16,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final _auth = AuthService();
 
   // ============================================================
-  // POPUP KONFIRMASI (YA / TIDAK)
+  // POPUP KONFIRMASI YA / TIDAK
   // ============================================================
   void _confirmDialog({
     required String message,
@@ -40,7 +40,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
               children: [
                 _choiceButton("Ya", Colors.red, onYes),
                 const SizedBox(width: 16),
-                _choiceButton("Tidak", Colors.green, () => Navigator.pop(context)),
+                _choiceButton("Tidak", Colors.green, () {
+                  Navigator.pop(context);
+                }),
               ],
             )
           ],
@@ -50,7 +52,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   // ============================================================
-  // BUTTON PILIHAN
+  // BUTTON YA / TIDAK
   // ============================================================
   Widget _choiceButton(String text, Color color, VoidCallback onTap) {
     return GestureDetector(
@@ -70,7 +72,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   // ============================================================
-  // INPUT PASSWORD UNTUK DELETE ACCOUNT
+  // DIALOG PASSWORD UNTUK DELETE ACCOUNT
   // ============================================================
   void _showPasswordDialogForDelete() {
     final passCtrl = TextEditingController();
@@ -108,14 +110,23 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
               if (msg != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(msg), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: Text(msg),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.only(
+                        bottom: 80, left: 16, right: 16),
+                  ),
                 );
                 return;
               }
 
               context.go('/signin');
             },
-            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+            child: const Text(
+              "Hapus",
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -130,57 +141,55 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F3E3),
 
-      appBar: AppBar(
-        title: const Text(
-          "LoFo USU",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF4CAF50),
-      ),
-
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      // ========== TOP BAR BACK BTN ==========
+      body: Column(
         children: [
-          // NOTIFIKASI
-          _settingTile(
-            title: "Notifikasi / Pemberitahuan",
-            icon: notif ? Icons.notifications_active : Icons.notifications_off,
-            color: Colors.green,
-            onTap: () => setState(() => notif = !notif),
-          ),
+          TopBarBackBtn(title: "LoFo USU"),
 
-          // LOGOUT
-          _settingTile(
-            title: "Keluar dari Akun",
-            icon: Icons.logout,
-            color: Colors.green,
-            onTap: () {
-              _confirmDialog(
-                message: "Apakah Anda yakin keluar dari akun?",
-                onYes: () async {
-                  Navigator.pop(context);
-                  await _auth.signOut();
-                  context.go('/signin');
-                },
-              );
-            },
-          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _settingTile(
+                  title: "Notifikasi / Pemberitahuan",
+                  icon:
+                  notif ? Icons.notifications_active : Icons.notifications_off,
+                  color: Colors.green,
+                  onTap: () => setState(() => notif = !notif),
+                ),
 
-          // DELETE ACCOUNT
-          _settingTile(
-            title: "Hapus Akun",
-            icon: Icons.delete,
-            color: Colors.red,
-            onTap: () {
-              _confirmDialog(
-                message: "Apakah Anda yakin menghapus akun?",
-                onYes: () async {
-                  Navigator.pop(context);
-                  _showPasswordDialogForDelete();
-                },
-              );
-            },
+                _settingTile(
+                  title: "Keluar dari Akun",
+                  icon: Icons.logout,
+                  color: Colors.green,
+                  onTap: () {
+                    _confirmDialog(
+                      message: "Apakah Anda yakin keluar dari akun?",
+                      onYes: () async {
+                        Navigator.pop(context);
+                        await _auth.signOut();
+                        if (mounted) context.go('/signin');
+                      },
+                    );
+                  },
+                ),
+
+                _settingTile(
+                  title: "Hapus Akun",
+                  icon: Icons.delete,
+                  color: Colors.red,
+                  onTap: () {
+                    _confirmDialog(
+                      message: "Apakah Anda yakin menghapus akun?",
+                      onYes: () {
+                        Navigator.pop(context);
+                        _showPasswordDialogForDelete();
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -188,7 +197,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   }
 
   // ============================================================
-  // TEMPLATE TILE SETTING
+  // TILE SETTING
   // ============================================================
   Widget _settingTile({
     required String title,
