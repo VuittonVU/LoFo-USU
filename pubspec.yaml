@@ -71,6 +71,8 @@ flutter:
     - assets/images/dompet2.png
     - assets/images/dompet3.png
     - assets/images/avatar.jpg
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+    - assets/icons/whatsapp.png
+    - assets/icons/phone.png
+    - assets/icons/instagram.png
+    - assets/icons/mail.png
+

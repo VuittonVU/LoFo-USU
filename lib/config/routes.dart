@@ -19,7 +19,9 @@ import '../screens/main/main_navigation_screen.dart';
 import '../screens/main/notification_screen.dart';
 import '../screens/main/filter_screen.dart';
 import '../screens/main/add_new_laporan.dart';
-import '../screens/main/laporan_aktif_screen_pelapor.dart';
+import '../screens/main/laporan_pelapor.dart';
+import '../screens/main/edit_laporan.dart';
+import '../screens/main/edit_dokumentasi_screen.dart';
 
 // ====== PROFILE ======
 import '../screens/main/profile_screen.dart';
@@ -39,17 +41,20 @@ class AppRoutes {
   static const String berhasil  = '/berhasil';
 
   // MAIN
-  static const String mainNav   = '/main';
-  static const String notif     = '/notifikasi';
-  static const String filter    = '/filter';
-  static const String addLaporan = '/add-laporan';
-  static const String laporanAktif = '/laporan-aktif';
+  static const String mainNav     = '/main';
+  static const String notif       = '/notifikasi';
+  static const String filter      = '/filter';
+  static const String addLaporan  = '/add-laporan';
+  static const String laporanItem = '/laporan-aktif';   // item detail
+
+  // EDIT ROUTES
+  static const String editLaporan      = '/edit-laporan';
+  static const String editDokumentasi  = '/edit-dokumentasi';
 
   // PROFILE
-  static const String profile = '/profile';
-  static const String editProfile = '/edit-profile';
+  static const String profile        = '/profile';
+  static const String editProfile    = '/edit-profile';
   static const String accountSettings = '/account-settings';
-
 }
 
 GoRouter createRouter() {
@@ -102,7 +107,7 @@ GoRouter createRouter() {
       ),
 
       // ============================
-      // NOTIFIKASI
+      // NOTIFICATION
       // ============================
       GoRoute(
         path: AppRoutes.notif,
@@ -126,22 +131,59 @@ GoRouter createRouter() {
       ),
 
       // ============================
-      // LAPORAN AKTIF (Detail Item)
+      // LAPORAN PELAPOR (DETAIL ITEM)
       // ============================
       GoRoute(
-        path: AppRoutes.laporanAktif,
+        path: AppRoutes.laporanItem,
         builder: (context, state) {
-          final data = state.extra as Map<String, dynamic>?;
+          final data = state.extra as Map<String, dynamic>? ?? {};
 
-          return ItemDetailScreen(
-            images: data?["images"] ?? [],
-            title: data?["title"] ?? "-",
-            reporterName: data?["reporterName"] ?? "-",
-            dateFound: data?["dateFound"] ?? "-",
-            locationFound: data?["locationFound"] ?? "-",
-            category: data?["category"] ?? "-",
-            description: data?["description"] ?? "-",
-            status: data?["status"] ?? "Aktif",
+          return LaporanPelaporScreen(
+            images: data["images"] ?? [],
+            title: data["title"] ?? "-",
+            reporterName: data["reporterName"] ?? "-",
+            dateFound: data["dateFound"] ?? "-",
+            locationFound: data["locationFound"] ?? "-",
+            category: data["category"] ?? "-",
+            description: data["description"] ?? "-",
+            status: data["status"] ?? "Aktif",
+          );
+        },
+      ),
+
+      // ============================
+      // EDIT LAPORAN
+      // ============================
+      GoRoute(
+        path: AppRoutes.editLaporan,
+        builder: (_, state) {
+          final data = state.extra as Map<String, dynamic>? ?? {};
+
+          return EditLaporanScreen(
+            images: data["images"] ?? [],
+            title: data["title"] ?? "",
+            reporterName: data["reporterName"] ?? "",
+            dateFound: data["dateFound"] ?? "",
+            locationFound: data["locationFound"] ?? "",
+            category: data["category"] ?? "",
+            description: data["description"] ?? "",
+            status: data["status"] ?? "Aktif",
+          );
+        },
+      ),
+
+      // ============================
+      // EDIT DOKUMENTASI
+      // ============================
+      GoRoute(
+        path: AppRoutes.editDokumentasi,
+        builder: (_, state) {
+          final data = state.extra as Map<String, dynamic>? ?? {};
+
+          return EditDokumentasiScreen(
+            images: data["images"] ?? [],
+            title: data["title"] ?? "",
+            status: data["status"] ?? "Dalam Proses",
           );
         },
       ),
@@ -166,6 +208,7 @@ GoRouter createRouter() {
       // ============================
       // PROFILE
       // ============================
+      // PROFILE
       GoRoute(
         path: AppRoutes.profile,
         builder: (_, __) => const ProfileScreen(),
@@ -175,7 +218,7 @@ GoRouter createRouter() {
         path: AppRoutes.editProfile,
         builder: (_, __) => const EditProfileScreen(),
       ),
-      
+
       GoRoute(
         path: AppRoutes.accountSettings,
         builder: (_, __) => const AccountSettingsScreen(),

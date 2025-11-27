@@ -2,7 +2,7 @@ import 'dart:io'; // Perlu untuk akses File gambar
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // Import Image Picker
 import 'package:lofousu/widgets/lofo_scaffold.dart';
-import 'package:lofousu/widgets/green_top_bar_new.dart';
+import 'package:lofousu/widgets/green_top_bar_back_edit.dart';
 
 class EditReportScreen extends StatefulWidget {
   const EditReportScreen({super.key});

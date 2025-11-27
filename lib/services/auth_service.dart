@@ -44,4 +44,31 @@ class AuthService {
   Future<void> signOut() async {
     await _auth.signOut();
   }
+
+  //DELETE ACCOUNT
+  Future<String?> deleteAccount({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+
+      if (user == null) return "User tidak ditemukan.";
+
+      // WAJIB REAUTHENTICATE
+      final cred = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+
+      await user.reauthenticateWithCredential(cred);
+
+      // HAPUS USER
+      await user.delete();
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return e.message;
+    }
+  }
 }

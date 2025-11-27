@@ -6,7 +6,6 @@ import 'home_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
 
-
 class MainNavigationScreen extends StatefulWidget {
   final int startIndex;
   final String? kategori;
@@ -37,18 +36,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      const HomeScreen(),
+      const HomeScreen(),                                                // 0
 
-      SearchScreen(
+      SearchScreen(                                                      // 1
         kategori: widget.kategori ?? "",
         lokasi: widget.lokasi ?? "",
         urutan: widget.urutan ?? "",
       ),
 
-      const SizedBox.shrink(),
+      const SizedBox.shrink(),                                           // 2
 
-      const ProfileScreen(),
-      const Center(child: Text("History")),
+      const Center(child: Text("History")),                              // 3
+
+      const ProfileScreen(),                                             // 4
     ];
 
     return Scaffold(
@@ -57,13 +57,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       bottomNavigationBar: MainNavigationBar(
         index: index,
         onTap: (i) {
-          // ----------- HANDLE TOMBOL PLUS -----------
           if (i == 2) {
-            context.go('/add-laporan');   // route yang kita buat
+            context.go('/add-laporan');
             return;
           }
 
-          // NORMAL NAVIGATION
           setState(() => index = i);
         },
       ),

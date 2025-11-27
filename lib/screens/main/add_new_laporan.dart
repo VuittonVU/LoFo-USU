@@ -110,7 +110,7 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                       ),
                       onPressed: () {
                         context.push(
-                          AppRoutes.laporanAktif,
+                          AppRoutes.laporanItem,
                           extra: {
                             "imagePath": "assets/images/default.png",
                             "title": namaController.text,

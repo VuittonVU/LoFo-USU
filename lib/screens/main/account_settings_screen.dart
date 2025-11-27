@@ -1,86 +1,213 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../config/routes.dart';
+import '../../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class AccountSettingsScreen extends StatelessWidget {
-  const AccountSettingsScreen({Key? key}) : super(key: key);
 
-  void _confirmLogout(BuildContext context) {
+class AccountSettingsScreen extends StatefulWidget {
+  const AccountSettingsScreen({super.key});
+
+  @override
+  State<AccountSettingsScreen> createState() => _AccountSettingsScreenState();
+}
+
+class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
+  bool notif = false;
+  final _auth = AuthService();
+
+  // ============================================================
+  // POPUP KONFIRMASI (YA / TIDAK)
+  // ============================================================
+  void _confirmDialog({
+    required String message,
+    required VoidCallback onYes,
+  }) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Keluar dari akun?'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun ini?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _choiceButton("Ya", Colors.red, onYes),
+                const SizedBox(width: 16),
+                _choiceButton("Tidak", Colors.green, () => Navigator.pop(context)),
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BUTTON PILIHAN
+  // ============================================================
+  Widget _choiceButton(String text, Color color, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // INPUT PASSWORD UNTUK DELETE ACCOUNT
+  // ============================================================
+  void _showPasswordDialogForDelete() {
+    final passCtrl = TextEditingController();
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Konfirmasi Password"),
+        content: TextField(
+          controller: passCtrl,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: "Masukkan password akun Anda",
+          ),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-          ElevatedButton(onPressed: () {
-            Navigator.pop(context);
-            context.go(AppRoutes.signIn);
-          }, child: const Text('Ya')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+
+              final msg = await _auth.deleteAccount(
+                email: user.email!,
+                password: passCtrl.text.trim(),
+              );
+
+              if (!mounted) return;
+
+              if (msg != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(msg), backgroundColor: Colors.red),
+                );
+                return;
+              }
+
+              context.go('/signin');
+            },
+            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
   }
 
-  void _confirmDelete(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Hapus Akun'),
-        content: const Text('Apakah Anda yakin menghapus akun? Tindakan ini tidak dapat dibatalkan.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-          ElevatedButton(onPressed: () {
-            Navigator.pop(context);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Akun berhasil dihapus')));
-            context.go(AppRoutes.splash);
-          }, child: const Text('Hapus', style: TextStyle(color: Colors.white))),
-        ],
-      ),
-    );
-  }
-
+  // ============================================================
+  // UI
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFE3F3E3),
+
       appBar: AppBar(
-        title: const Text('Pengaturan Akun'),
-        backgroundColor: const Color(0xFF43A047),
+        title: const Text(
+          "LoFo USU",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF4CAF50),
       ),
+
       body: ListView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Udin Simanjuntak'),
-              subtitle: const Text('akun@usu.ac.id'),
-            ),
+          // NOTIFIKASI
+          _settingTile(
+            title: "Notifikasi / Pemberitahuan",
+            icon: notif ? Icons.notifications_active : Icons.notifications_off,
+            color: Colors.green,
+            onTap: () => setState(() => notif = !notif),
           ),
-          const SizedBox(height: 10),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text('Notifikasi / Pemberitahuan'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
-            ),
+
+          // LOGOUT
+          _settingTile(
+            title: "Keluar dari Akun",
+            icon: Icons.logout,
+            color: Colors.green,
+            onTap: () {
+              _confirmDialog(
+                message: "Apakah Anda yakin keluar dari akun?",
+                onYes: () async {
+                  Navigator.pop(context);
+                  await _auth.signOut();
+                  context.go('/signin');
+                },
+              );
+            },
           ),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Keluar dari Akun'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _confirmLogout(context),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            onPressed: () => _confirmDelete(context),
-            icon: const Icon(Icons.delete, color: Colors.red),
-            label: const Text('Hapus Akun', style: TextStyle(color: Colors.red)),
+
+          // DELETE ACCOUNT
+          _settingTile(
+            title: "Hapus Akun",
+            icon: Icons.delete,
+            color: Colors.red,
+            onTap: () {
+              _confirmDialog(
+                message: "Apakah Anda yakin menghapus akun?",
+                onYes: () async {
+                  Navigator.pop(context);
+                  _showPasswordDialogForDelete();
+                },
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // TEMPLATE TILE SETTING
+  // ============================================================
+  Widget _settingTile({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      child: ListTile(
+        tileColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: color.withOpacity(0.4)),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        leading: Icon(icon, color: color),
+        title: Text(title, style: const TextStyle(fontSize: 16)),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }
