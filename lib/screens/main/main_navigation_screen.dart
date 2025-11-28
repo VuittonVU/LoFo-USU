@@ -36,7 +36,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      const HomeScreen(),                                                // 0
+      HomeScreen(),                                                // 0
 
       SearchScreen(                                                      // 1
         kategori: widget.kategori ?? "",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:lofousu/widgets/lofo_scaffold.dart';
 import 'package:lofousu/widgets/item_status_badge.dart';
 import 'package:lofousu/widgets/green_top_bar_back_edit.dart';
@@ -40,9 +41,6 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
         title: 'LoFo USU',
         onBackPressed: () => context.go('/main?startIndex=0'),
 
-        // ============================================================
-        //           EDIT CONDITION BASED ON STATUS LAPORAN
-        // ============================================================
         onEditPressed: () {
           final data = {
             "images": widget.images,
@@ -57,7 +55,7 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
 
           if (widget.status == "Aktif") {
             context.push('/edit-laporan', extra: data);
-          } else if (widget.status == "Dalam Proses" || widget.status == "Selesai") {
+          } else {
             context.push('/edit-dokumentasi', extra: data);
           }
         },
@@ -159,7 +157,7 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
   }
 
   // ============================================================
-  // CAROUSEL GAMBAR
+  // FIX: CAROUSEL GAMBAR UNTUK FIREBASE STORAGE
   // ============================================================
   Widget _buildImageCarousel(List<String> images) {
     if (images.isEmpty) {
@@ -175,11 +173,27 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
       itemCount: images.length,
       onPageChanged: (i) => setState(() => currentIndex = i),
       itemBuilder: (_, i) {
-        return Image.asset(
-          images[i],
+        final url = images[i];
+
+        return Image.network(
+          url,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-              Container(color: Colors.grey.shade300),
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+
+            return Center(
+              child: CircularProgressIndicator(
+                value: progress.expectedTotalBytes != null
+                    ? progress.cumulativeBytesLoaded /
+                    progress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+          errorBuilder: (_, __, ___) => Container(
+            color: Colors.grey.shade300,
+            child: const Center(child: Icon(Icons.broken_image, size: 40)),
+          ),
         );
       },
     );

@@ -36,10 +36,10 @@ class WelcomeScreen extends StatelessWidget {
 
               Image.asset(
                 "assets/logo.png",
-                height: 150,
+                height: 250,
               ),
 
-              const SizedBox(height: 70),
+              const SizedBox(height: 20),
 
               // Tombol Daftar
               GestureDetector(

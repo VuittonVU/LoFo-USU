@@ -36,17 +36,17 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
             // Logo + Text
             Column(
               children: [
                 Image.asset(
                   "assets/logo.png",
-                  width: 165,
+                  width: 250,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 const Text(
                   "Menghubungkan Anda\nDengan Barang Anda",
                   textAlign: TextAlign.center,
@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
 
             const Padding(
-              padding: EdgeInsets.only(bottom: 40),
+              padding: EdgeInsets.only(bottom: 90),
               child: CircularProgressIndicator(
                 color: Color(0xFF4CAF50),
                 strokeWidth: 3,

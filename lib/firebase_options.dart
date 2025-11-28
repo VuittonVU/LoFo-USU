@@ -83,4 +83,5 @@ class DefaultFirebaseOptions {
     authDomain: 'lofo-usu-b8800.firebaseapp.com',
     storageBucket: 'lofo-usu-b8800.firebasestorage.app',
   );
+
 }

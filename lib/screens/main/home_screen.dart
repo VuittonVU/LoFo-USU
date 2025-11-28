@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../config/routes.dart';
 import '../../widgets/item_card.dart';
 
@@ -14,14 +16,12 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         children: [
           // =========================================================
-          //   TOP BAR BARU (DISAMAKAN DENGAN SEARCH SCREEN)
+          // TOP BAR
           // =========================================================
           Container(
-            height: 90, // sama dengan SearchScreen
+            height: 90,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFF4CAF50),
-            ),
+            color: const Color(0xFF4CAF50),
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -29,34 +29,25 @@ class HomeScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // EXIT
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.welcome),
-                      child: const Icon(
-                        Icons.exit_to_app,
-                        color: Colors.white,
-                        size: 30, // selaras dengan search top bar scale
-                      ),
+                      child: const Icon(Icons.exit_to_app,
+                          size: 30, color: Colors.white),
                     ),
 
-                    // TITLE (diselaraskan)
                     const Text(
                       "LoFo USU",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 21,           // sama seperti SearchScreen
+                        fontSize: 21,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
 
-                    // NOTIFICATION
                     GestureDetector(
-                      onTap: () => context.go('/notifikasi'),
-                      child: const Icon(
-                        Icons.notifications_none,
-                        color: Colors.white,
-                        size: 30,
-                      ),
+                      onTap: () => context.go(AppRoutes.notif),
+                      child: const Icon(Icons.notifications_none,
+                          size: 30, color: Colors.white),
                     ),
                   ],
                 ),
@@ -65,85 +56,67 @@ class HomeScreen extends StatelessWidget {
           ),
 
           // =========================================================
-          //  LIST ITEM
+          // FETCH DATA DARI FIRESTORE
           // =========================================================
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.only(top: 20, bottom: 100),
-              children: [
-                _bigCard(
-                  child: ItemCard(
-                    images: const [
-                      'assets/images/dompet1.png',
-                      'assets/images/dompet2.png',
-                    ],
-                    imagePath: 'assets/images/dompet1.png',
-                    title: 'Dompet',
-                    fakultas: 'FISIP',
-                    tanggal: '25 September 2025',
-                    status: 'Aktif',
-                    kategori: 'Dompet',
-                    deskripsi:
-                    'Ditemukan sebuah dompet merek fossil berwarna coklat di area gedung A Fakultas Ilmu Sosial dan Politik',
-                  ),
-                ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("laporan")
+                  .orderBy("dateFound", descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Gagal mengambil data"));
+                }
 
-                _bigCard(
-                  child: ItemCard(
-                    images: const [
-                      'assets/images/dompet1.png',
-                    ],
-                    imagePath: 'assets/images/dompet1.png',
-                    title: 'Kartu',
-                    fakultas: 'Teknik',
-                    tanggal: '1 Juli 2025',
-                    status: 'Dalam Proses',
-                    kategori: 'Kartu Identitas',
-                    deskripsi:
-                    'Kartu identitas mahasiswa ditemukan di area gedung Teknik.',
-                  ),
-                ),
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                _bigCard(
-                  child: ItemCard(
-                    images: const [
-                      'assets/images/dompet2.png',
-                    ],
-                    imagePath: 'assets/images/dompet2.png',
-                    title: 'Dompet',
-                    fakultas: 'FIB',
-                    tanggal: '22 Mei 2025',
-                    status: 'Selesai',
-                    kategori: 'Dompet',
-                    deskripsi:
-                    'Dompet warna hitam ditemukan di sekitar gedung Fakultas Ilmu Budaya.',
-                  ),
-                ),
+                final docs = snapshot.data!.docs;
 
-                _bigCard(
-                  child: ItemCard(
-                    images: const [
-                      'assets/images/dompet3.png',
-                    ],
-                    imagePath: 'assets/images/dompet3.png',
-                    title: 'Dompet',
-                    fakultas: 'FEB',
-                    tanggal: '4 April 2025',
-                    status: 'Selesai',
-                    kategori: 'Dompet',
-                    deskripsi:
-                    'Dompet merah ditemukan dekat kantin Fakultas Ekonomi dan Bisnis.',
-                  ),
-                ),
-              ],
+                if (docs.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Belum ada laporan",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 120, top: 20),
+                  itemCount: docs.length,
+                  itemBuilder: (context, i) {
+                    final data = docs[i].data() as Map<String, dynamic>;
+
+                    final List images = data["images"] ?? [];
+
+                    return _bigCard(
+                      child: ItemCard(
+                        images: List<String>.from(images),
+                        imagePath: images.isNotEmpty ? images.first : "",
+                        title: data["title"] ?? "-",
+                        fakultas: data["locationFound"] ?? "-",
+                        tanggal: data["dateFound"] ?? "-",
+                        status: data["status"] ?? "-",
+                        kategori: data["category"] ?? "-",
+                        deskripsi: data["description"] ?? "-",
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  // Wrapper untuk memperbesar card
   Widget _bigCard({required Widget child}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),

@@ -89,7 +89,7 @@ class _SignInScreenState extends State<SignInScreen> {
           Center(
             child: Image.asset(
               "assets/logo.png",
-              height: 125,
+              height: 250,
             ),
           ),
 
@@ -119,7 +119,7 @@ class _SignInScreenState extends State<SignInScreen> {
             ),
           ),
 
-          const SizedBox(height: 35),
+          const SizedBox(height: 40),
 
           // LOGIN BUTTON
           PrimaryButton(

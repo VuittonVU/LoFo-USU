@@ -73,9 +73,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               color: Color(0xFF2F9E44),
             ),
           ),
+          const SizedBox(height: 15),
+          Image.asset("assets/logo.png", height: 250),
           const SizedBox(height: 20),
-          Image.asset("assets/logo.png", height: 150),
-          const SizedBox(height: 30),
 
           LofoTextField(
             label: "Email USU",

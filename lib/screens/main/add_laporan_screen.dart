@@ -1,6 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../config/routes.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../widgets/top_bar_backbtn.dart';
 
 class AddLaporanScreen extends StatefulWidget {
@@ -11,6 +15,9 @@ class AddLaporanScreen extends StatefulWidget {
 }
 
 class _AddLaporanScreenState extends State<AddLaporanScreen> {
+  final ImagePicker picker = ImagePicker();
+  final List<File> selectedImages = [];
+
   final TextEditingController namaController = TextEditingController();
   final TextEditingController pelaporController = TextEditingController();
   final TextEditingController tanggalController = TextEditingController();
@@ -18,11 +25,91 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
   final TextEditingController kategoriController = TextEditingController();
   final TextEditingController deskripsiController = TextEditingController();
 
+  bool isLoading = false;
+
+  Future<void> pickImages() async {
+    try {
+      final List<XFile>? files = await picker.pickMultiImage();
+
+      if (files == null) return;
+      setState(() {
+        selectedImages.addAll(files.map((e) => File(e.path)));
+      });
+    } catch (e) {
+      print("Pick image error: $e");
+    }
+  }
+
+  Future<void> submit() async {
+    if (selectedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Pilih minimal 1 gambar")),
+      );
+      return;
+    }
+
+    if (namaController.text.isEmpty ||
+        pelaporController.text.isEmpty ||
+        tanggalController.text.isEmpty ||
+        lokasiController.text.isEmpty ||
+        kategoriController.text.isEmpty ||
+        deskripsiController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Semua form wajib diisi")),
+      );
+      return;
+    }
+
+    try {
+      setState(() => isLoading = true);
+
+      // Upload gambar ke Firebase Storage
+      List<String> downloadUrls = [];
+
+      for (int i = 0; i < selectedImages.length; i++) {
+        final file = selectedImages[i];
+        final ref = FirebaseStorage.instance
+            .ref()
+            .child("laporan_images/${DateTime.now().millisecondsSinceEpoch}_$i.jpg");
+
+        await ref.putFile(file);
+        String url = await ref.getDownloadURL();
+        downloadUrls.add(url);
+      }
+
+      // Simpan ke Firestore
+      await FirebaseFirestore.instance.collection("laporan").add({
+        "title": namaController.text,
+        "reporterName": pelaporController.text,
+        "dateFound": tanggalController.text,
+        "location": lokasiController.text,
+        "category": kategoriController.text,
+        "description": deskripsiController.text,
+        "status": "Aktif",
+        "images": downloadUrls,
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+
+      // Navigasi kembali aman
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go("/main?startIndex=0");
+      }
+    } catch (e) {
+      print("Submit error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error submit: $e")),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green.shade50,
-
       body: Column(
         children: [
           TopBarBackBtn(
@@ -36,7 +123,7 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
               child: Column(
                 children: [
                   GestureDetector(
-                    onTap: () {},
+                    onTap: pickImages,
                     child: Container(
                       height: 170,
                       width: double.infinity,
@@ -44,8 +131,18 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                         color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Center(
+                      child: selectedImages.isEmpty
+                          ? const Center(
                         child: Icon(Icons.add, size: 60, color: Colors.green),
+                      )
+                          : ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(
+                          selectedImages.first,
+                          width: double.infinity,
+                          height: 170,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
@@ -63,13 +160,8 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                   const SizedBox(height: 20),
 
                   _formContainer(children: [
-                    const Text(
-                      "Detail",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    const Text("Detail",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
 
                     _labelIcon("Tanggal ditemukan:", Icons.calendar_month),
@@ -85,21 +177,17 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                   const SizedBox(height: 20),
 
                   _formContainer(children: [
-                    const Text(
-                      "Deskripsi",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    const Text("Deskripsi",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
+
                     _textField(deskripsiController, maxLines: 5),
                   ]),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
 
                   SizedBox(
-                    width: 250,
+                    width: 260,
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -108,22 +196,10 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                           borderRadius: BorderRadius.circular(40),
                         ),
                       ),
-                      onPressed: () {
-                        context.push(
-                          AppRoutes.laporanItem,
-                          extra: {
-                            "imagePath": "assets/images/default.png",
-                            "title": namaController.text,
-                            "reporterName": pelaporController.text,
-                            "tanggal": tanggalController.text,
-                            "fakultas": lokasiController.text,
-                            "kategori": kategoriController.text,
-                            "deskripsi": deskripsiController.text,
-                            "status": "Aktif",
-                          },
-                        );
-                      },
-                      child: const Text(
+                      onPressed: isLoading ? null : submit,
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
                         "Selesai",
                         style: TextStyle(
                           fontSize: 16,
@@ -134,7 +210,7 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
