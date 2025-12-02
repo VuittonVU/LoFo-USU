@@ -5,6 +5,7 @@ import '../../widgets/navbar.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
+import 'report_history_screen.dart';   // <-- IMPORT HISTORY
 
 class MainNavigationScreen extends StatefulWidget {
   final int startIndex;
@@ -38,17 +39,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final screens = [
       HomeScreen(),                                                // 0
 
-      SearchScreen(                                                      // 1
+      SearchScreen(                                                // 1
         kategori: widget.kategori ?? "",
         lokasi: widget.lokasi ?? "",
         urutan: widget.urutan ?? "",
       ),
 
-      const SizedBox.shrink(),                                           // 2
+      const SizedBox.shrink(),                                     // 2
 
-      const Center(child: Text("History")),                              // 3
+      const ReportHistoryScreen(),                                 // 3
 
-      const ProfileScreen(),                                             // 4
+      const ProfileScreen(),                                       // 4
     ];
 
     return Scaffold(
@@ -58,7 +59,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: index,
         onTap: (i) {
           if (i == 2) {
-            context.go('/add-laporan');
+            context.go('/add-laporan'); // tombol ADD
             return;
           }
 

@@ -19,14 +19,21 @@ import '../screens/main/main_navigation_screen.dart';
 import '../screens/main/notification_screen.dart';
 import '../screens/main/filter_screen.dart';
 import '../screens/main/add_laporan_screen.dart';
-import '../screens/main/laporan_pelapor.dart';
-import '../screens/main/edit_laporan.dart';
-import '../screens/main/edit_dokumentasi_screen.dart';
+import '../screens/main/report_history_screen.dart';
 
 // ====== PROFILE ======
 import '../screens/main/profile_screen.dart';
 import '../screens/main/edit_profile_screen.dart';
 import '../screens/main/account_settings_screen.dart';
+
+// ====== DETAIL ======
+import '../screens/main/laporan_pelapor_screen.dart';
+import '../screens/main/laporan_umum_screen.dart';
+import '../screens/main/laporan_dokumentasi_screen.dart';
+
+// ====== EDIT ======
+import '../screens/main/edit_laporan.dart';
+import '../screens/main/edit_dokumentasi_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -45,9 +52,11 @@ class AppRoutes {
   static const String notif = '/notifikasi';
   static const String filter = '/filter';
   static const String addLaporan = '/add-laporan';
+  static const String reportHistory = '/riwayat';
 
-  // DETAIL ITEM (UPDATED)
-  static const String laporanItem = '/laporan-item';
+  // DETAIL
+  static const String detailPelapor = '/laporan-pelapor';
+  static const String detailUmum = '/laporan-umum';
 
   // EDIT
   static const String editLaporan = '/edit-laporan';
@@ -65,9 +74,9 @@ GoRouter createRouter() {
 
     routes: [
 
-      // ============================
+      // ============================================================
       // ONBOARDING
-      // ============================
+      // ============================================================
       GoRoute(
         path: AppRoutes.splash,
         builder: (_, __) => const SplashScreen(),
@@ -77,79 +86,113 @@ GoRouter createRouter() {
         builder: (_, __) => const WelcomeScreen(),
       ),
 
-      // ============================
+      // ============================================================
       // AUTH
-      // ============================
+      // ============================================================
       GoRoute(path: AppRoutes.signIn, builder: (_, __) => const SignInScreen()),
       GoRoute(path: AppRoutes.signUp, builder: (_, __) => const SignUpScreen()),
-      GoRoute(path: '/email-verification', builder: (_, __) => const EmailVerificationScreen()),
+      GoRoute(path: "/email-verification", builder: (_, __) => const EmailVerificationScreen()),
       GoRoute(path: AppRoutes.otp, builder: (_, __) => const OtpScreen()),
       GoRoute(path: AppRoutes.identitas, builder: (_, __) => const IdentitasScreen()),
       GoRoute(path: AppRoutes.kontak, builder: (_, __) => const KontakScreen()),
       GoRoute(path: AppRoutes.berhasil, builder: (_, __) => const BerhasilScreen()),
 
-      // ============================
-      // NOTIFICATION
-      // ============================
+      // ============================================================
+      // MAIN NAV
+      // ============================================================
+      GoRoute(
+        path: AppRoutes.mainNav,
+        builder: (_, state) {
+          final q = state.uri.queryParameters;
+          return MainNavigationScreen(
+            startIndex: int.tryParse(q["startIndex"] ?? "0") ?? 0,
+            kategori: q["kategori"],
+            lokasi: q["lokasi"],
+            urutan: q["urutan"],
+          );
+        },
+      ),
+
       GoRoute(
         path: AppRoutes.notif,
         builder: (_, __) => const NotificationScreen(),
       ),
 
-      // ============================
-      // FILTER SCREEN
-      // ============================
       GoRoute(
         path: AppRoutes.filter,
         builder: (_, __) => const FilterScreen(),
       ),
 
-      // ============================
-      // ADD LAPORAN
-      // ============================
       GoRoute(
         path: AppRoutes.addLaporan,
         builder: (_, __) => const AddLaporanScreen(),
       ),
 
-      // ============================
-      // LAPORAN ITEM (DETAIL)
-      // ------------------------
+      // ============================================================
+      // DETAIL — PELAPOR
+      // ============================================================
       GoRoute(
-        path: AppRoutes.laporanItem,
-        builder: (context, state) {
-          final data = state.extra as Map<String, dynamic>? ?? {};
+        path: AppRoutes.detailPelapor,
+        builder: (_, state) {
+          final data = state.extra as Map<String, dynamic>;
 
           return LaporanPelaporScreen(
-            images: data["images"] ?? [],
-            title: data["title"] ?? "-",
-            reporterName: data["reporterName"] ?? "-",
-            dateFound: data["dateFound"] ?? "-",
-            locationFound: data["locationFound"] ?? "-",
-            category: data["category"] ?? "-",
-            description: data["description"] ?? "-",
-            status: data["status"] ?? "Aktif",
+            laporanId: data["laporanId"],
+            ownerId: data["ownerId"],
+            images: List<String>.from(data["images"]),
+            title: data["title"],
+            reporterName: data["reporterName"],
+            dateFound: data["dateFound"],
+            locationFound: data["locationFound"],
+            category: data["category"],
+            description: data["description"],
+            status: data["status"],
           );
         },
       ),
 
-      // ============================
+
+      // ============================================================
+      // DETAIL — UMUM
+      // ============================================================
+      GoRoute(
+        path: AppRoutes.detailUmum,
+        builder: (_, state) {
+          final data = state.extra as Map<String, dynamic>;
+
+          return LaporanUmumScreen(
+            laporanId: data["laporanId"],
+            ownerId: data["ownerId"],
+            images: List<String>.from(data["images"]),
+            title: data["title"],
+            reporterName: data["reporterName"],
+            dateFound: data["dateFound"],
+            locationFound: data["locationFound"],
+            category: data["category"],
+            description: data["description"],
+            status: data["status"],
+          );
+        },
+      ),
+
+      // ============================================================
       // EDIT LAPORAN
-      // ============================
+      // ============================================================
       GoRoute(
         path: AppRoutes.editLaporan,
         builder: (_, state) {
-          final data = state.extra as Map<String, dynamic>? ?? {};
+          final data = state.extra as Map<String, dynamic>?;
 
           return EditLaporanScreen(
-            images: (data["images"] as List?)?.map((e) => e.toString()).toList() ?? [],
-            title: data["title"] ?? "",
-            reporterName: data["reporterName"] ?? "",
-            dateFound: data["dateFound"] ?? "",
-            locationFound: data["locationFound"] ?? "",
-            category: data["category"] ?? "",
-            description: data["description"] ?? "",
-            status: data["status"] ?? "Aktif",
+            laporanId: data?["laporanId"] ?? "",
+            images: List<String>.from(data?["images"] ?? []),
+            title: data?["title"] ?? "-",
+            reporterName: data?["reporterName"] ?? "-",
+            dateFound: data?["dateFound"] ?? "-",
+            locationFound: data?["locationFound"] ?? "-",
+            category: data?["category"] ?? "-",
+            description: data?["description"] ?? "-",
+            status: data?["status"] ?? "Aktif",
           );
         },
       ),
@@ -160,73 +203,52 @@ GoRouter createRouter() {
       GoRoute(
         path: AppRoutes.editDokumentasi,
         builder: (_, state) {
-          final data = state.extra as Map<String, dynamic>? ?? {};
+          final data = state.extra as Map<String, dynamic>?;
 
           return EditDokumentasiScreen(
-            images: (data["images"] as List?)?.map((e) => e.toString()).toList() ?? [],
+            laporanId: data?["laporanId"],   // WAJIB ADA
+            title: data?["title"] ?? "-",
+          );
+        },
+      ),
+
+      // DETAIL DOKUMENTASI
+      GoRoute(
+        path: "/dokumentasi",
+        builder: (_, state) {
+          final data = state.extra as Map<String, dynamic>;
+          return LaporanDokumentasiScreen(
+            dokumentasi: List<String>.from(data["images"] ?? []),
             title: data["title"] ?? "",
-            status: data["status"] ?? "Dalam Proses",
           );
         },
       ),
 
-      // ============================
-      // MAIN NAVIGATION
-      // ============================
-      GoRoute(
-        path: AppRoutes.mainNav,
-        builder: (context, state) {
-          final q = state.uri.queryParameters;
-
-          return MainNavigationScreen(
-            startIndex: int.tryParse(q["startIndex"] ?? "0") ?? 0,
-            kategori: q["kategori"],
-            lokasi: q["lokasi"],
-            urutan: q["urutan"],
-          );
-        },
-      ),
-
-      // ============================
+      // ============================================================
       // PROFILE
-      // ============================
+      // ============================================================
+      GoRoute(path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: AppRoutes.editProfile, builder: (_, __) => const EditProfileScreen()),
+      GoRoute(path: AppRoutes.accountSettings, builder: (_, __) => const AccountSettingsScreen()),
+
+      // ============================================================
+      // REPORT HISTORY
+      // ============================================================
       GoRoute(
-        path: AppRoutes.profile,
-        builder: (_, __) => const ProfileScreen(),
+        path: AppRoutes.reportHistory,
+        builder: (_, __) => const ReportHistoryScreen(),
       ),
-      GoRoute(
-        path: AppRoutes.editProfile,
-        builder: (_, __) => const EditProfileScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.accountSettings,
-        builder: (_, __) => const AccountSettingsScreen(),
-      ),
+
+
     ],
 
-    // ============================
+    // ============================================================
     // ERROR PAGE
-    // ============================
+    // ============================================================
     errorBuilder: (context, state) {
       return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error, color: Colors.red, size: 70),
-              const SizedBox(height: 12),
-              const Text(
-                "404 - Page Tidak Ditemukan",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              Text(state.uri.toString()),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => context.go('/main?startIndex=0'),
-                child: const Text("Kembali ke Home"),
-              ),
-            ],
-          ),
+          child: Text("404 — Page Not Found\n${state.uri}"),
         ),
       );
     },

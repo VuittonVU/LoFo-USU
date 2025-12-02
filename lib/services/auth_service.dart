@@ -1,7 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
+  AuthService._();
+  static final AuthService instance = AuthService._();
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  User? get currentUser => _auth.currentUser;
 
   // SIGN UP + kirim verifikasi email
   Future<String?> signUp(String email, String password) async {
@@ -37,6 +43,24 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
+    }
+  }
+
+  Future<void> createUserDocumentIfNotExists(User user) async {
+    final doc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    final snap = await doc.get();
+    if (!snap.exists) {
+      await doc.set({
+        "nama": "",
+        "nim": "",
+        "prodi": "",
+        "telepon": "",
+        "instagram": "",
+        "whatsapp": "",
+        "fotoProfil": "",
+        "createdAt": FieldValue.serverTimestamp(),
+      });
     }
   }
 

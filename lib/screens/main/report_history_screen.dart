@@ -1,51 +1,12 @@
-// lib/screens/report_history_screen.dart
 import 'package:flutter/material.dart';
-import 'package:lofousu/widgets/green_top_bar.dart'; //
-import 'package:lofousu/widgets/lofo_scaffold.dart'; //
-import 'package:lofousu/widgets/item_card.dart';     //
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// --- MODEL DATA ---
+import '../../services/firestore_service.dart';
+import '../../widgets/item_card.dart';
+import '../../config/routes.dart';
+
 enum ReportStatus { semua, aktif, dalamProses, selesai }
-
-class Report {
-  final String imagePath;
-  final String title;
-  final String fakultas;
-  final String tanggal;
-  final ReportStatus status;
-
-  Report({
-    required this.imagePath,
-    required this.title,
-    required this.fakultas,
-    required this.tanggal,
-    required this.status,
-  });
-
-  String get statusString {
-    switch (status) {
-      case ReportStatus.aktif:
-        return 'Aktif';
-      case ReportStatus.dalamProses:
-        return 'Dalam Proses';
-      case ReportStatus.selesai:
-        return 'Selesai';
-      default:
-        return '';
-    }
-  }
-}
-
-// Data Mock menggunakan dompet1.png, dompet2.png, dompet3.png
-List<Report> mockReports = [
-  Report(imagePath: 'assets/images/dompet1.png', title: 'Dompet Kulit', fakultas: 'Fasilkom-TI', tanggal: '20 September 2025', status: ReportStatus.aktif),
-  Report(imagePath: 'assets/images/dompet2.png', title: 'Kartu Mahasiswa', fakultas: 'FEB', tanggal: '19 September 2025', status: ReportStatus.dalamProses),
-  Report(imagePath: 'assets/images/dompet3.png', title: 'Kunci Motor', fakultas: 'Hukum', tanggal: '20 Agustus 2025', status: ReportStatus.selesai),
-  Report(imagePath: 'assets/images/dompet1.png', title: 'Dompet Merah', fakultas: 'FIB', tanggal: '01 Oktober 2025', status: ReportStatus.aktif),
-  Report(imagePath: 'assets/images/dompet2.png', title: 'Headset', fakultas: 'FISIP', tanggal: '10 Juli 2025', status: ReportStatus.selesai),
-];
-// --- END MODEL DATA ---
-
 
 class ReportHistoryScreen extends StatefulWidget {
   const ReportHistoryScreen({super.key});
@@ -55,135 +16,217 @@ class ReportHistoryScreen extends StatefulWidget {
 }
 
 class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
-  ReportStatus _currentFilter = ReportStatus.semua;
+  ReportStatus _filter = ReportStatus.semua;
 
-  final List<ReportStatus> _filterOptions = [
-    ReportStatus.semua,
-    ReportStatus.aktif,
-    ReportStatus.dalamProses,
-    ReportStatus.selesai,
-  ];
-
-  List<Report> get _filteredReports {
-    if (_currentFilter == ReportStatus.semua) {
-      return mockReports;
-    }
-    return mockReports.where((report) => report.status == _currentFilter).toList();
-  }
-
-  String _getStatusText(ReportStatus status) {
-    switch (status) {
-      case ReportStatus.semua:
-        return 'Semua';
-      case ReportStatus.aktif:
-        return 'Aktif';
-      case ReportStatus.dalamProses:
-        return 'Dalam Proses';
-      case ReportStatus.selesai:
-        return 'Selesai';
-    }
-  }
+  final Map<ReportStatus, String> statusText = {
+    ReportStatus.semua: "Semua",
+    ReportStatus.aktif: "Aktif",
+    ReportStatus.dalamProses: "Dalam Proses",
+    ReportStatus.selesai: "Selesai",
+  };
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold di sini diperlukan untuk menampung GreenTopBar sebagai AppBar
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final String userId = user.uid;
+
     return Scaffold(
-      appBar: const GreenTopBar(title: 'LoFo USU'), //
+      backgroundColor: const Color(0xFFEFF4EF),
 
-      body: LofoScaffold( //
-        // LofoScaffold sudah menyediakan SingleChildScrollView dan background gradient
-        safeArea: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF4CAF50),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "LoFo USU",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 21,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
 
-            const Text(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 14),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 18),
+            child: Text(
               "Riwayat Laporan",
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 15),
+          ),
+          const SizedBox(height: 14),
 
-            // --- TOMBOL FILTER KATEGORI ---
-            Container(
+          // =============================================
+          // FILTER STATUS
+          // =============================================
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
+                    blurRadius: 4,
+                  )
                 ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: _filterOptions.map((status) {
+                children: ReportStatus.values.map((s) {
+                  final bool selected = s == _filter;
                   return Expanded(
-                    child: _buildFilterButton(status),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _filter = s),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: selected
+                            ? BoxDecoration(
+                          color: const Color(0xFF4CAF50),
+                          borderRadius: BorderRadius.circular(10),
+                        )
+                            : null,
+                        child: Text(
+                          statusText[s]!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: selected ? Colors.white : Colors.black87,
+                            fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
                   );
                 }).toList(),
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
-            // --- DAFTAR LAPORAN ---
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: _filteredReports.length,
-              itemBuilder: (context, index) {
-                final report = _filteredReports[index];
-                return ItemCard( //
-                  imagePath: report.imagePath,
-                  title: report.title,
-                  fakultas: report.fakultas,
-                  tanggal: report.tanggal,
-                  status: report.statusString,
+          // =============================================
+          // STREAM RIWAYAT LAPORAN
+          // =============================================
+          Expanded(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreService.instance.streamLaporanByUser(userId),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final data = snapshot.data!;
+
+                if (data.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Belum ada laporan yang kamu buat.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  );
+                }
+
+                // FILTER STATUS
+                List<Map<String, dynamic>> filtered = data;
+
+                if (_filter != ReportStatus.semua) {
+                  String filterText = switch (_filter) {
+                    ReportStatus.aktif => "Aktif",
+                    ReportStatus.dalamProses => "Dalam Proses",
+                    ReportStatus.selesai => "Selesai",
+                    _ => "",
+                  };
+
+                  filtered = filtered
+                      .where((d) => (d['status_laporan'] ?? "") == filterText)
+                      .toList();
+                }
+
+                if (filtered.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "Tidak ada laporan pada kategori ini.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  );
+                }
+
+                // =============================================
+                // LIST ITEMCARD (creator → detailPelapor)
+                // =============================================
+                return ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 100),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, index) {
+                    final item = filtered[index];
+
+                    final List<String> images =
+                    List<String>.from(item['foto_barang'] ?? []);
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      child: Transform.scale(
+                        scale: 1.085,
+                        child: ItemCard(
+                          laporanId: item['id'],
+                          images: images,
+                          ownerId: item['id_pengguna'] ?? "",
+
+                          title: item['nama_barang'] ?? "-",
+                          fakultas: item['lokasi'] ?? "-",
+                          tanggal: item['tanggal'] ?? "-",
+                          status: item['status_laporan'] ?? "-",
+                          kategori: item['kategori'] ?? "-",
+                          deskripsi: item['deskripsi'] ?? "-",
+                          reporterName: item['nama_pelapor'] ?? "-",
+
+                          // 🔥 ALWAYS CREATOR → MASUK DETAIL PELAPOR
+                          onTap: () {
+                            context.push(AppRoutes.detailPelapor, extra: {
+                              "laporanId": item["id"],
+                              "images": images,
+                              "title": item["nama_barang"],
+                              "reporterName": item["nama_pelapor"],
+                              "dateFound": item["tanggal"],
+                              "locationFound": item["lokasi"],
+                              "category": item["kategori"],
+                              "description": item["deskripsi"],
+                              "status": item["status_laporan"],
+                              "ownerId": item["id_pengguna"],
+                              "dokumentasi": List<String>.from(item["dokumentasi"] ?? []),
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
-
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- WIDGET HELPER UNTUK TOMBOL FILTER ---
-  Widget _buildFilterButton(ReportStatus status) {
-    final bool isSelected = _currentFilter == status;
-    final String text = _getStatusText(status);
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _currentFilter = status;
-        });
-      },
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF5CB85C) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: isSelected ? null : Border.all(color: Colors.grey.shade300, width: 0.5),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 14,
           ),
-        ),
+        ],
       ),
     );
   }

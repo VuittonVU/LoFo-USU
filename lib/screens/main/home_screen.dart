@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../config/routes.dart';
+import '../../services/firestore_service.dart';
 import '../../widgets/item_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -10,18 +11,19 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     return Scaffold(
       backgroundColor: const Color(0xFFEFF4EF),
-
       body: Column(
         children: [
-          // =========================================================
           // TOP BAR
-          // =========================================================
           Container(
             height: 90,
             width: double.infinity,
-            color: const Color(0xFF4CAF50),
+            decoration: const BoxDecoration(
+              color: Color(0xFF4CAF50),
+            ),
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -31,10 +33,12 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.welcome),
-                      child: const Icon(Icons.exit_to_app,
-                          size: 30, color: Colors.white),
+                      child: const Icon(
+                        Icons.exit_to_app,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
-
                     const Text(
                       "LoFo USU",
                       style: TextStyle(
@@ -43,11 +47,13 @@ class HomeScreen extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-
                     GestureDetector(
                       onTap: () => context.go(AppRoutes.notif),
-                      child: const Icon(Icons.notifications_none,
-                          size: 30, color: Colors.white),
+                      child: const Icon(
+                        Icons.notifications_none,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
                   ],
                 ),
@@ -55,56 +61,96 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // =========================================================
-          // FETCH DATA DARI FIRESTORE
-          // =========================================================
+          // ===============================================
+          // STREAM LIST LAPORAN
+          // ===============================================
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection("laporan")
-                  .orderBy("dateFound", descending: true)
-                  .snapshots(),
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreService.instance.streamAllLaporan(),
               builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Gagal mengambil data"));
-                }
-
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final docs = snapshot.data!.docs;
+                final items = snapshot.data ?? [];
 
-                if (docs.isEmpty) {
+                if (items.isEmpty) {
                   return const Center(
                     child: Text(
-                      "Belum ada laporan",
+                      "Belum ada laporan.",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
+                        color: Colors.black54,
                       ),
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 120, top: 20),
-                  itemCount: docs.length,
-                  itemBuilder: (context, i) {
-                    final data = docs[i].data() as Map<String, dynamic>;
-
-                    final List images = data["images"] ?? [];
+                  padding: const EdgeInsets.only(top: 20, bottom: 100),
+                  itemCount: items.length,
+                  itemBuilder: (_, index) {
+                    final item = items[index];
+                    final String ownerId = item['id_pengguna'] ?? '';
 
                     return _bigCard(
                       child: ItemCard(
-                        images: List<String>.from(images),
-                        imagePath: images.isNotEmpty ? images.first : "",
-                        title: data["title"] ?? "-",
-                        fakultas: data["locationFound"] ?? "-",
-                        tanggal: data["dateFound"] ?? "-",
-                        status: data["status"] ?? "-",
-                        kategori: data["category"] ?? "-",
-                        deskripsi: data["description"] ?? "-",
+                        laporanId: item['id'],
+                        images: List<String>.from(item['foto_barang'] ?? []),
+                        title: item['nama_barang'] ?? '-',
+                        fakultas: item['lokasi'] ?? '-',
+                        tanggal: item['tanggal'] ?? '-',
+                        status: item['status_laporan'] ?? 'Aktif',
+                        kategori: item['kategori'] ?? '-',
+                        deskripsi: item['deskripsi'] ?? '-',
+                        reporterName: item['nama_pelapor'] ?? '-',
+                        ownerId: ownerId,
+
+                        onTap: () {
+                          // ===========================
+                          // CREATOR → MASUK SCREEN PELAPOR
+                          // ===========================
+                          if (uid == ownerId) {
+                            context.push(
+                              AppRoutes.detailPelapor,
+                              extra: {
+                                "laporanId": item["id"],
+                                "images": List<String>.from(item["foto_barang"] ?? []),
+                                "title": item["nama_barang"],
+                                "reporterName": item["nama_pelapor"],
+                                "dateFound": item["tanggal"],
+                                "locationFound": item["lokasi"],
+                                "category": item["kategori"],
+                                "description": item["deskripsi"],
+                                "status": item["status_laporan"],
+                                "ownerId": ownerId,
+                                "dokumentasi": List<String>.from(item["dokumentasi"] ?? []),
+                              },
+                            );
+                          }
+
+                          // ===========================
+                          // USER UMUM → MASUK SCREEN UMUM
+                          // ===========================
+                          else {
+                            context.push(
+                              AppRoutes.detailUmum,
+                              extra: {
+                                "laporanId": item["id"],
+                                "ownerId": ownerId,
+                                "images": List<String>.from(item["foto_barang"] ?? []),
+                                "title": item["nama_barang"],
+                                "reporterName": item["nama_pelapor"],
+                                "dateFound": item["tanggal"],
+                                "locationFound": item["lokasi"],
+                                "category": item["kategori"],
+                                "description": item["deskripsi"],
+                                "status": item["status_laporan"],
+                              },
+                            );
+                          }
+                        },
                       ),
                     );
                   },

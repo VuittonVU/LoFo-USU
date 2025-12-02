@@ -13,7 +13,7 @@ class AccountSettingsScreen extends StatefulWidget {
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   bool notif = false;
-  final _auth = AuthService();
+  final _auth = AuthService.instance;
 
   // ============================================================
   // POPUP KONFIRMASI YA / TIDAK

@@ -153,7 +153,11 @@ class _FilterScreenState extends State<FilterScreen> {
       body: Column(
         children: [
           // TOP BAR
-          const TopBarBackBtn(title: "LoFo USU"),
+          TopBarBackBtn(
+            title: "LoFo USU",
+            onBack: () => context.go("/main?startIndex=1"),
+          ),
+
 
           Expanded(
             child: SingleChildScrollView(

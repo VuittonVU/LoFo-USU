@@ -43,6 +43,7 @@ dependencies:
   cloud_firestore: ^6.1.0
   firebase_storage: ^13.0.4
   firebase_app_check: ^0.4.1+2
+  url_launcher: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -70,12 +71,14 @@ flutter:
     - assets/logo.png
     - assets/icons/back.png
     - assets/icons/filter.png
-    - assets/images/dompet1.png
-    - assets/images/dompet2.png
-    - assets/images/dompet3.png
-    - assets/images/avatar.jpg
     - assets/icons/whatsapp.png
     - assets/icons/phone.png
     - assets/icons/instagram.png
     - assets/icons/mail.png
+    - assets/images/dompet1.png
+    - assets/images/dompet2.png
+    - assets/images/dompet3.png
+    - assets/images/avatar.jpg
+    - assets/images/default.png
+    - assets/images/pp.png
 

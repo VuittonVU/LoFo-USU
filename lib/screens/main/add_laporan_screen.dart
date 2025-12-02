@@ -1,10 +1,12 @@
-import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 
+import '../../config/routes.dart';
+import '../../services/firestore_service.dart';
+import '../../services/storage_service.dart';
 import '../../widgets/top_bar_backbtn.dart';
 
 class AddLaporanScreen extends StatefulWidget {
@@ -15,94 +17,98 @@ class AddLaporanScreen extends StatefulWidget {
 }
 
 class _AddLaporanScreenState extends State<AddLaporanScreen> {
-  final ImagePicker picker = ImagePicker();
-  final List<File> selectedImages = [];
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController namaController = TextEditingController();
-  final TextEditingController pelaporController = TextEditingController();
-  final TextEditingController tanggalController = TextEditingController();
-  final TextEditingController lokasiController = TextEditingController();
-  final TextEditingController kategoriController = TextEditingController();
-  final TextEditingController deskripsiController = TextEditingController();
+  final TextEditingController namaBarangCtrl = TextEditingController();
+  final TextEditingController pelaporCtrl = TextEditingController();
+  final TextEditingController tanggalCtrl = TextEditingController();
+  final TextEditingController lokasiCtrl = TextEditingController();
+  final TextEditingController kategoriCtrl = TextEditingController();
+  final TextEditingController deskripsiCtrl = TextEditingController();
 
-  bool isLoading = false;
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _pickedImages = [];
+  bool _isPicking = false;
+  bool _isSubmitting = false;
 
-  Future<void> pickImages() async {
+  @override
+  void dispose() {
+    namaBarangCtrl.dispose();
+    pelaporCtrl.dispose();
+    tanggalCtrl.dispose();
+    lokasiCtrl.dispose();
+    kategoriCtrl.dispose();
+    deskripsiCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImages() async {
+    if (_isPicking) return; // hindari error "already_active"
+    _isPicking = true;
+
     try {
-      final List<XFile>? files = await picker.pickMultiImage();
-
-      if (files == null) return;
-      setState(() {
-        selectedImages.addAll(files.map((e) => File(e.path)));
-      });
-    } catch (e) {
-      print("Pick image error: $e");
+      final result = await _picker.pickMultiImage(imageQuality: 80);
+      if (result != null && mounted) {
+        setState(() {
+          _pickedImages = result;
+        });
+      }
+    } finally {
+      _isPicking = false;
     }
   }
 
-  Future<void> submit() async {
-    if (selectedImages.isEmpty) {
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Pilih minimal 1 gambar")),
+        const SnackBar(content: Text('Silakan login terlebih dahulu.')),
       );
       return;
     }
 
-    if (namaController.text.isEmpty ||
-        pelaporController.text.isEmpty ||
-        tanggalController.text.isEmpty ||
-        lokasiController.text.isEmpty ||
-        kategoriController.text.isEmpty ||
-        deskripsiController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Semua form wajib diisi")),
-      );
-      return;
-    }
+    setState(() => _isSubmitting = true);
 
     try {
-      setState(() => isLoading = true);
+      // upload gambar
+      final fotoUrls = await StorageService.instance.uploadLaporanPhotos(
+        userId: user.uid,
+        files: _pickedImages,
+      );
 
-      // Upload gambar ke Firebase Storage
-      List<String> downloadUrls = [];
+      // kalau nama pelapor kosong → pakai displayName / email
+      final namaPelapor = pelaporCtrl.text.isNotEmpty
+          ? pelaporCtrl.text
+          : (user.displayName ?? user.email ?? '-');
 
-      for (int i = 0; i < selectedImages.length; i++) {
-        final file = selectedImages[i];
-        final ref = FirebaseStorage.instance
-            .ref()
-            .child("laporan_images/${DateTime.now().millisecondsSinceEpoch}_$i.jpg");
+      await FirestoreService.instance.createLaporan(
+        userId: user.uid,
+        namaPelapor: namaPelapor,
+        namaBarang: namaBarangCtrl.text.trim(),
+        tanggal: tanggalCtrl.text.trim(),
+        deskripsi: deskripsiCtrl.text.trim(),
+        fotoUrls: fotoUrls,
+        kategori: kategoriCtrl.text.trim(),
+        lokasi: lokasiCtrl.text.trim(),
+      );
 
-        await ref.putFile(file);
-        String url = await ref.getDownloadURL();
-        downloadUrls.add(url);
-      }
+      if (!mounted) return;
 
-      // Simpan ke Firestore
-      await FirebaseFirestore.instance.collection("laporan").add({
-        "title": namaController.text,
-        "reporterName": pelaporController.text,
-        "dateFound": tanggalController.text,
-        "location": lokasiController.text,
-        "category": kategoriController.text,
-        "description": deskripsiController.text,
-        "status": "Aktif",
-        "images": downloadUrls,
-        "createdAt": FieldValue.serverTimestamp(),
-      });
-
-      // Navigasi kembali aman
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.go("/main?startIndex=0");
-      }
-    } catch (e) {
-      print("Submit error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error submit: $e")),
+        const SnackBar(content: Text('Laporan berhasil dikirim.')),
+      );
+
+      context.go('${AppRoutes.mainNav}?startIndex=0');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengirim laporan: $e')),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -114,104 +120,152 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
         children: [
           TopBarBackBtn(
             title: "LoFo USU",
-            onBack: () => context.go("/main?startIndex=0"),
+            onBack: () => context.go('${AppRoutes.mainNav}?startIndex=0'),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: pickImages,
-                    child: Container(
-                      height: 170,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: selectedImages.isEmpty
-                          ? const Center(
-                        child: Icon(Icons.add, size: 60, color: Colors.green),
-                      )
-                          : ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.file(
-                          selectedImages.first,
-                          width: double.infinity,
-                          height: 170,
-                          fit: BoxFit.cover,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // PICK IMAGE AREA
+                    GestureDetector(
+                      onTap: _pickImages,
+                      child: Container(
+                        height: 170,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: _pickedImages.isEmpty
+                            ? const Center(
+                          child: Icon(Icons.add,
+                              size: 60, color: Colors.green),
+                        )
+                            : ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding:
+                          const EdgeInsets.symmetric(horizontal: 8),
+                          itemCount: _pickedImages.length,
+                          separatorBuilder: (_, __) =>
+                          const SizedBox(width: 8),
+                          itemBuilder: (_, i) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.file(
+                                File(_pickedImages[i].path),
+                                width: 150,
+                                height: 170,
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  _formContainer(children: [
-                    _label("Nama barang:"),
-                    _textField(namaController),
-
-                    _label("Dilaporkan oleh:"),
-                    _textField(pelaporController),
-                  ]),
-
-                  const SizedBox(height: 20),
-
-                  _formContainer(children: [
-                    const Text("Detail",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-
-                    _labelIcon("Tanggal ditemukan:", Icons.calendar_month),
-                    _textField(tanggalController),
-
-                    _labelIcon("Lokasi ditemukan:", Icons.location_on),
-                    _textField(lokasiController),
-
-                    _labelIcon("Kategori:", Icons.list),
-                    _textField(kategoriController),
-                  ]),
-
-                  const SizedBox(height: 20),
-
-                  _formContainer(children: [
-                    const Text("Deskripsi",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-
-                    _textField(deskripsiController, maxLines: 5),
-                  ]),
-
-                  const SizedBox(height: 40),
-
-                  SizedBox(
-                    width: 260,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4CAF50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(40),
-                        ),
+                    _formContainer(children: [
+                      _label("Nama barang:"),
+                      _textField(
+                        namaBarangCtrl,
+                        validator: (v) =>
+                        v == null || v.isEmpty ? 'Wajib diisi' : null,
                       ),
-                      onPressed: isLoading ? null : submit,
-                      child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                        "Selesai",
+                      _label("Dilaporkan oleh:"),
+                      _textField(pelaporCtrl),
+                    ]),
+
+                    const SizedBox(height: 20),
+
+                    _formContainer(children: [
+                      const Text(
+                        "Detail",
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _labelIcon("Tanggal ditemukan:", Icons.calendar_month),
+                      _textField(
+                        tanggalCtrl,
+                        validator: (v) =>
+                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                      ),
+                      _labelIcon("Lokasi ditemukan:", Icons.location_on),
+                      _textField(
+                        lokasiCtrl,
+                        validator: (v) =>
+                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                      ),
+                      _labelIcon("Kategori:", Icons.list),
+                      _textField(
+                        kategoriCtrl,
+                        validator: (v) =>
+                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                      ),
+                    ]),
+
+                    const SizedBox(height: 20),
+
+                    _formContainer(children: [
+                      const Text(
+                        "Deskripsi",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _textField(
+                        deskripsiCtrl,
+                        maxLines: 5,
+                        validator: (v) =>
+                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                      ),
+                    ]),
+
+                    const SizedBox(height: 30),
+
+                    SizedBox(
+                      width: 250,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                        ),
+                        onPressed: _isSubmitting ? null : _submit,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            valueColor:
+                            AlwaysStoppedAnimation(Colors.white),
+                          ),
+                        )
+                            : const Text(
+                          "Selesai",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 30),
-                ],
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
@@ -241,18 +295,26 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     child: Text(text, style: const TextStyle(fontSize: 16)),
   );
 
-  Widget _labelIcon(String text, IconData icon) => Row(
-    children: [
-      Icon(icon, size: 20),
-      const SizedBox(width: 8),
-      Text(text, style: const TextStyle(fontSize: 14)),
-    ],
+  Widget _labelIcon(String text, IconData icon) => Padding(
+    padding: const EdgeInsets.only(top: 12, bottom: 6),
+    child: Row(
+      children: [
+        Icon(icon, size: 20),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 14)),
+      ],
+    ),
   );
 
-  Widget _textField(TextEditingController c, {int maxLines = 1}) {
-    return TextField(
+  Widget _textField(
+      TextEditingController c, {
+        int maxLines = 1,
+        String? Function(String?)? validator,
+      }) {
+    return TextFormField(
       controller: c,
       maxLines: maxLines,
+      validator: validator,
       decoration: InputDecoration(
         hintText: "Ketik disini...",
         enabledBorder: OutlineInputBorder(

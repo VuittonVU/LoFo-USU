@@ -1,8 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lofousu/widgets/top_bar_backbtn.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../services/firestore_service.dart';
+import '../../services/storage_service.dart';
+import '../../widgets/top_bar_backbtn.dart';
 
 class EditLaporanScreen extends StatefulWidget {
+  final String laporanId;
   final List<String> images;
   final String title;
   final String reporterName;
@@ -14,14 +20,15 @@ class EditLaporanScreen extends StatefulWidget {
 
   const EditLaporanScreen({
     super.key,
-    this.images = const [],
-    this.title = '',
-    this.reporterName = '',
-    this.dateFound = '',
-    this.locationFound = '',
-    this.category = '',
-    this.description = '',
-    this.status = 'Aktif',
+    required this.laporanId,
+    required this.images,
+    required this.title,
+    required this.reporterName,
+    required this.dateFound,
+    required this.locationFound,
+    required this.category,
+    required this.description,
+    required this.status,
   });
 
   @override
@@ -29,44 +36,110 @@ class EditLaporanScreen extends StatefulWidget {
 }
 
 class _EditLaporanScreenState extends State<EditLaporanScreen> {
-  late TextEditingController namaCtrl;
-  late TextEditingController pelaporCtrl;
-  late TextEditingController tanggalCtrl;
-  late TextEditingController lokasiCtrl;
-  late TextEditingController kategoriCtrl;
-  late TextEditingController deskripsiCtrl;
+  final picker = ImagePicker();
+  List<File> newImages = [];
+
+  final namaCtrl = TextEditingController();
+  final lokasiCtrl = TextEditingController();
+  final tanggalCtrl = TextEditingController();
+  final kategoriCtrl = TextEditingController();
+  final deskripsiCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    namaCtrl      = TextEditingController(text: widget.title);
-    pelaporCtrl   = TextEditingController(text: widget.reporterName);
-    tanggalCtrl   = TextEditingController(text: widget.dateFound);
-    lokasiCtrl    = TextEditingController(text: widget.locationFound);
-    kategoriCtrl  = TextEditingController(text: widget.category);
-    deskripsiCtrl = TextEditingController(text: widget.description);
+    namaCtrl.text = widget.title;
+    lokasiCtrl.text = widget.locationFound;
+    tanggalCtrl.text = widget.dateFound;
+    kategoriCtrl.text = widget.category;
+    deskripsiCtrl.text = widget.description;
   }
 
-  @override
-  void dispose() {
-    namaCtrl.dispose();
-    pelaporCtrl.dispose();
-    tanggalCtrl.dispose();
-    lokasiCtrl.dispose();
-    kategoriCtrl.dispose();
-    deskripsiCtrl.dispose();
-    super.dispose();
+  // ===================================================
+  // PICK NEW IMAGE
+  // ===================================================
+  Future pickImage() async {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      newImages.add(File(picked.path));
+      setState(() {});
+    }
+  }
+
+  // ===================================================
+  // FULLSCREEN IMAGE POPUP (Native Flutter)
+  // ===================================================
+  void _openFullImage(String url) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            color: Colors.black,
+            child: InteractiveViewer(
+              panEnabled: true,
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Center(
+                child: Image.network(url),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ===================================================
+  // SAVE LAPORAN
+  // ===================================================
+  Future _saveLaporan() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    List<String> finalImages = [...widget.images];
+
+    // upload foto baru
+    for (var img in newImages) {
+      final url = await StorageService.instance.uploadLaporanPhoto(img);
+      finalImages.add(url);
+    }
+
+    // update text fields
+    await FirestoreService.instance.updateLaporan(
+      widget.laporanId,
+      {
+        "nama_barang": namaCtrl.text,
+        "tanggal": tanggalCtrl.text,
+        "lokasi": lokasiCtrl.text,
+        "kategori": kategoriCtrl.text,
+        "deskripsi": deskripsiCtrl.text,
+      },
+    );
+
+    // update foto
+    await FirestoreService.instance.updateLaporanPhotos(
+      laporanId: widget.laporanId,
+      fotoUrls: finalImages,
+    );
+
+    Navigator.pop(context);
+    context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F3E3),
-
       body: Column(
         children: [
           TopBarBackBtn(
-            title: "LoFo USU",
+            title: "Edit Laporan",
             onBack: () => context.pop(),
           ),
 
@@ -74,146 +147,72 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // FOTO
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      height: 190,
-                      width: double.infinity,
-                      color: Colors.grey.shade300,
-                      child: widget.images.isEmpty
-                          ? const Center(
-                        child: Text(
-                          "Belum ada foto",
-                          style: TextStyle(color: Colors.black54),
+
+                  // IMAGE BOX
+                  GestureDetector(
+                    onTap: () {
+                      if (newImages.isNotEmpty) {
+                        _openFullImage(newImages.last.path);
+                      } else if (widget.images.isNotEmpty) {
+                        _openFullImage(widget.images.first);
+                      }
+                    },
+                    onDoubleTap: pickImage,
+                    child: _imageBox(),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  _formBox([
+                    _label("Nama Barang"),
+                    _editable(namaCtrl),
+                  ]),
+
+                  const SizedBox(height: 20),
+
+                  _formBox([
+                    _label("Tanggal"),
+                    _editable(tanggalCtrl),
+                    const SizedBox(height: 12),
+                    _label("Lokasi"),
+                    _editable(lokasiCtrl),
+                    const SizedBox(height: 12),
+                    _label("Kategori"),
+                    _editable(kategoriCtrl),
+                  ]),
+
+                  const SizedBox(height: 20),
+
+                  _formBox([
+                    _label("Deskripsi"),
+                    _editable(deskripsiCtrl, maxLines: 4),
+                  ]),
+
+                  const SizedBox(height: 28),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40),
                         ),
-                      )
-                          : Image.asset(
-                        widget.images.first,
-                        fit: BoxFit.cover,
+                      ),
+                      onPressed: _saveLaporan,
+                      child: const Text(
+                        "Simpan Perubahan",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 24),
-
-                  // ============== FORM BASIC ==============
-                  _formContainer(
-                    children: [
-                      _label("Nama barang:"),
-                      _editableField(namaCtrl),
-
-                      _label("Dilaporkan oleh:"),
-                      _editableField(pelaporCtrl),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // ============== DETAIL ==============
-                  _formContainer(
-                    children: [
-                      const Text(
-                        "Detail",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      _labelWithIcon("Tanggal ditemukan:", Icons.calendar_month),
-                      _editableField(tanggalCtrl),
-
-                      _labelWithIcon("Lokasi ditemukan:", Icons.location_on),
-                      _editableField(lokasiCtrl),
-
-                      _labelWithIcon("Kategori:", Icons.list),
-                      _editableField(kategoriCtrl),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // ============== DESKRIPSI ==============
-                  _formContainer(
-                    children: [
-                      const Text(
-                        "Deskripsi",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _editableField(deskripsiCtrl, maxLines: 4),
-                    ],
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ============== BUTTON BAWAH ==============
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(40),
-                              ),
-                            ),
-                            onPressed: () {
-                              // TODO: hapus laporan di Firestore
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text("Fitur hapus belum diimplementasi."),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              "Hapus Laporan",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF4CAF50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(40),
-                              ),
-                            ),
-                            onPressed: () {
-                              // TODO: simpan perubahan ke backend
-                              Navigator.pop(context);
-                            },
-                            child: const Text(
-                              "Selesai",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20)
                 ],
               ),
             ),
@@ -223,69 +222,78 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     );
   }
 
-  // ================== WIDGET2 KECIL ==================
-  Widget _formContainer({required List<Widget> children}) {
+  // ===================================================
+  // COMPONENTS
+  // ===================================================
+  Widget _imageBox() {
+    if (newImages.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Image.file(
+          newImages.last,
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    final img = widget.images.isNotEmpty ? widget.images.first : null;
+
+    if (img == null) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.grey.shade300,
+        ),
+        child: const Center(
+          child: Icon(Icons.add_photo_alternate, size: 60, color: Colors.grey),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.network(
+        img,
+        height: 200,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  Widget _formBox(List<Widget> children) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: Border.all(color: Colors.green),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF4CAF50)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
-      ),
+          crossAxisAlignment: CrossAxisAlignment.start, children: children),
     );
   }
 
   Widget _label(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.w600));
   }
 
-  Widget _labelWithIcon(String text, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF4CAF50)),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _editableField(TextEditingController ctrl, {int maxLines = 1}) {
+  Widget _editable(TextEditingController ctrl, {int maxLines = 1}) {
     return TextField(
       controller: ctrl,
       maxLines: maxLines,
       decoration: InputDecoration(
-        suffixIcon: const Icon(Icons.edit, size: 18, color: Color(0xFF4CAF50)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        suffixIcon: const Icon(Icons.edit, color: Colors.green),
         enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.green),
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF4CAF50)),
         ),
         focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Colors.green, width: 2),
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
         ),
       ),
     );

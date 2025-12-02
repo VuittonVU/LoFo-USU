@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../config/routes.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/green_top_bar.dart';
 import '../../widgets/item_card.dart';
@@ -24,21 +25,73 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchCtrl = TextEditingController();
-  final FirestoreService firestore = FirestoreService();
 
-  // ======================================
-  // Fungsi parse tanggal Firestore (yyyy-mm-dd)
-  // ======================================
-  DateTime parseTgl(String tgl) {
+  DateTime parseTanggal(String tgl) {
+    const bulan = {
+      "Januari": 1,
+      "Februari": 2,
+      "Maret": 3,
+      "April": 4,
+      "Mei": 5,
+      "Juni": 6,
+      "Juli": 7,
+      "Agustus": 8,
+      "September": 9,
+      "Oktober": 10,
+      "November": 11,
+      "Desember": 12,
+    };
+
     try {
-      return DateTime.parse(tgl); // format: 2025-01-10
+      final parts = tgl.split(" ");
+      final day = int.parse(parts[0]);
+      final month = bulan[parts[1]] ?? 1;
+      final year = int.parse(parts[2]);
+      return DateTime(year, month, day);
     } catch (_) {
-      return DateTime.now();
+      return DateTime(2000);
     }
+  }
+
+  List<Map<String, dynamic>> _applyFilter(List<Map<String, dynamic>> items) {
+    List<Map<String, dynamic>> result = [...items];
+
+    // SEARCH
+    if (searchCtrl.text.isNotEmpty) {
+      final q = searchCtrl.text.toLowerCase();
+      result = result.where((i) =>
+      (i['nama_barang'] ?? '').toString().toLowerCase().contains(q) ||
+          (i['deskripsi'] ?? '').toString().toLowerCase().contains(q),
+      ).toList();
+    }
+
+    // KATEGORI
+    if (widget.kategori.isNotEmpty) {
+      result = result.where((i) => (i['kategori'] ?? '') == widget.kategori).toList();
+    }
+
+    // LOKASI
+    if (widget.lokasi.isNotEmpty) {
+      result = result.where((i) => (i['lokasi'] ?? '') == widget.lokasi).toList();
+    }
+
+    // SORTING
+    if (widget.urutan == "A-Z") {
+      result.sort((a, b) => (a['nama_barang'] ?? '').compareTo(b['nama_barang'] ?? ''));
+    } else if (widget.urutan == "Z-A") {
+      result.sort((a, b) => (b['nama_barang'] ?? '').compareTo(a['nama_barang'] ?? ''));
+    } else if (widget.urutan == "Terbaru") {
+      result.sort((a, b) =>
+          parseTanggal(b['tanggal'] ?? '').compareTo(parseTanggal(a['tanggal'] ?? '')));
+    }
+
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
+    final String uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5FFF5),
       appBar: const GreenTopBar(title: "LoFo USU"),
@@ -48,9 +101,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           const SizedBox(height: 14),
 
-          // ======================================
           // SEARCH BAR
-          // ======================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Container(
@@ -81,13 +132,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
           const SizedBox(height: 16),
 
-          // ======================================
           // FILTER BUTTON
-          // ======================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: GestureDetector(
-              onTap: () => context.go("/filter"),
+              onTap: () => context.go(AppRoutes.filter),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
@@ -117,73 +166,16 @@ class _SearchScreenState extends State<SearchScreen> {
 
           const SizedBox(height: 12),
 
-          // ======================================
-          // STREAMBUILDER FIRESTORE
-          // ======================================
+          // RESULTS
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: firestore.getAllLaporan(), // ← Ambil semua laporan
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreService.instance.streamAllLaporan(),
               builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Center(child: Text("Error mengambil data"));
-                }
-
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                List<QueryDocumentSnapshot> docs = snapshot.data!.docs;
-
-                // ======================================
-                // Convert Firestore -> Map<String, dynamic>
-                // ======================================
-                List<Map<String, dynamic>> items = docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  return {
-                    "title": data["title"] ?? "",
-                    "kategori": data["category"] ?? "",
-                    "lokasi": data["locationFound"] ?? "",
-                    "tanggal": data["dateFound"] ?? "",
-                    "status": data["status"] ?? "",
-                    "deskripsi": data["description"] ?? "",
-                    "images": List<String>.from(data["images"] ?? []),
-                  };
-                }).toList();
-
-                // ======================================
-                // FILTERING
-                // ======================================
-
-                // Search
-                if (searchCtrl.text.isNotEmpty) {
-                  items = items.where((i) =>
-                      i["title"]
-                          .toLowerCase()
-                          .contains(searchCtrl.text.toLowerCase())).toList();
-                }
-
-                // Category
-                if (widget.kategori.isNotEmpty) {
-                  items = items.where((i) =>
-                  i["kategori"] == widget.kategori).toList();
-                }
-
-                // Location
-                if (widget.lokasi.isNotEmpty) {
-                  items = items.where((i) =>
-                  i["lokasi"] == widget.lokasi).toList();
-                }
-
-                // Sort
-                if (widget.urutan == "A-Z") {
-                  items.sort((a, b) => a["title"].compareTo(b["title"]));
-                } else if (widget.urutan == "Z-A") {
-                  items.sort((a, b) => b["title"].compareTo(a["title"]));
-                } else if (widget.urutan == "Terbaru") {
-                  items.sort((a, b) =>
-                      parseTgl(b["tanggal"])
-                          .compareTo(parseTgl(a["tanggal"])));
-                }
+                final items = _applyFilter(snapshot.data!);
 
                 if (items.isEmpty) {
                   return const Center(
@@ -198,31 +190,71 @@ class _SearchScreenState extends State<SearchScreen> {
                   );
                 }
 
-                // ======================================
-                // LISTVIEW ITEM
-                // ======================================
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: 100),
                   itemCount: items.length,
                   itemBuilder: (_, i) {
                     final item = items[i];
+                    final images = List<String>.from(item['foto_barang'] ?? []);
+                    final ownerId = item['id_pengguna'];
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                       child: Transform.scale(
                         scale: 1.085,
                         child: ItemCard(
-                          images: item["images"],
-                          imagePath: item["images"].isNotEmpty
-                              ? item["images"][0]
-                              : "",
-                          title: item["title"],
-                          fakultas: item["lokasi"],
-                          tanggal: item["tanggal"],
-                          status: item["status"],
-                          kategori: item["kategori"],
-                          deskripsi: item["deskripsi"],
+                          laporanId: item['id'],
+                          ownerId: ownerId,
+                          images: images,
+
+                          title: item['nama_barang'] ?? '-',
+                          fakultas: item['lokasi'] ?? '-',
+                          tanggal: item['tanggal'] ?? '-',
+                          status: item['status_laporan'] ?? 'Aktif',
+                          kategori: item['kategori'] ?? '-',
+                          deskripsi: item['deskripsi'] ?? '-',
+                          reporterName: item['nama_pelapor'] ?? '-',
+
+                          // 🔥 CUSTOM onTap berdasarkan role
+                          onTap: () {
+                            // CREATOR → detail pelapor
+                            if (uid == ownerId) {
+                              context.push(
+                                AppRoutes.detailPelapor,
+                                extra: {
+                                  "laporanId": item["id"],
+                                  "images": images,
+                                  "title": item["nama_barang"],
+                                  "reporterName": item["nama_pelapor"],
+                                  "dateFound": item["tanggal"],
+                                  "locationFound": item["lokasi"],
+                                  "category": item["kategori"],
+                                  "description": item["deskripsi"],
+                                  "status": item["status_laporan"],
+                                  "ownerId": ownerId,
+                                },
+                              );
+                            }
+
+                            // USER UMUM → detail umum
+                            else {
+                              context.push(
+                                AppRoutes.detailUmum,
+                                extra: {
+                                  "laporanId": item["id"],
+                                  "ownerId": ownerId,
+                                  "images": images,
+                                  "title": item["nama_barang"],
+                                  "reporterName": item["nama_pelapor"],
+                                  "dateFound": item["tanggal"],
+                                  "locationFound": item["lokasi"],
+                                  "category": item["kategori"],
+                                  "description": item["deskripsi"],
+                                  "status": item["status_laporan"],
+                                },
+                              );
+                            }
+                          },
                         ),
                       ),
                     );

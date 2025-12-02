@@ -20,7 +20,9 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
-  final _auth = AuthService();
+
+  /// FIX: pake singleton instance
+  final _auth = AuthService.instance;
 
   bool loading = false;
   bool showPass = false;
@@ -32,15 +34,8 @@ class _SignInScreenState extends State<SignInScreen> {
     final emailErr = Validators.usuEmail(emailCtrl.text.trim());
     final passErr = Validators.password(passCtrl.text.trim());
 
-    if (emailErr != null) {
-      LofoSnack.show(context, emailErr, error: true);
-      return;
-    }
-
-    if (passErr != null) {
-      LofoSnack.show(context, passErr, error: true);
-      return;
-    }
+    if (emailErr != null) return LofoSnack.show(context, emailErr, error: true);
+    if (passErr != null) return LofoSnack.show(context, passErr, error: true);
 
     setState(() => loading = true);
 
@@ -58,6 +53,10 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
+    // LOGIN SUCCESS → buat doc user kalau belum ada
+    final user = _auth.currentUser!;
+    await _auth.createUserDocumentIfNotExists(user);
+
     LofoSnack.show(context, "Login berhasil!");
 
     // GO TO MAIN
@@ -65,7 +64,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   // ============================================================
-  // UI
+  // UI (AMAN, GAK DIUBAH)
   // ============================================================
   @override
   Widget build(BuildContext context) {

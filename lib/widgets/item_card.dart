@@ -1,81 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../config/routes.dart';
-import 'item_status_badge.dart';
 
 class ItemCard extends StatelessWidget {
+  final String laporanId;
   final List<String> images;
-  final String imagePath;
+  final String ownerId;
+
   final String title;
   final String fakultas;
   final String tanggal;
+
   final String status;
   final String kategori;
   final String deskripsi;
+  final String reporterName;
+
+  final VoidCallback? onTap;
 
   const ItemCard({
     super.key,
-    this.images = const [],
-    required this.imagePath,
+    required this.laporanId,
+    required this.images,
+    required this.ownerId,
     required this.title,
     required this.fakultas,
     required this.tanggal,
     required this.status,
     required this.kategori,
     required this.deskripsi,
+    required this.reporterName,
+    this.onTap,
   });
+
+  Color _statusColor(String s) {
+    switch (s) {
+      case "Aktif":
+        return const Color(0xFF4CAF50);
+      case "Dalam Proses":
+        return Colors.orange;
+      case "Selesai":
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> finalImages =
-    images.isNotEmpty ? images : [imagePath];
-
     return GestureDetector(
-      onTap: () {
-        context.push(
-          AppRoutes.laporanItem, // <-- FIX DI SINI
-          extra: {
-            "images": finalImages,
-            "title": title,
-            "reporterName": "-",
-            "dateFound": tanggal,
-            "location": fakultas,
-            "category": kategori,
-            "description": deskripsi,
-            "status": status,
+      onTap: onTap ??
+              () {
+            final extraData = {
+              "laporanId": laporanId,
+              "images": images,
+              "title": title,
+              "reporterName": reporterName,
+              "dateFound": tanggal,
+              "locationFound": fakultas,
+              "category": kategori,
+              "description": deskripsi,
+              "status": status,
+              "ownerId": ownerId,
+            };
+
+            context.push(AppRoutes.detailUmum, extra: extraData);
           },
-        );
-      },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.black12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
+
+        // ============================
+        // ROW MAIN LAYOUT
+        // ============================
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // FOTO
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                finalImages.first,
-                width: 110,
-                height: 110,
+              child: images.isNotEmpty
+                  ? Image.network(
+                images.first,
+                width: 95,
+                height: 95,
                 fit: BoxFit.cover,
+              )
+                  : Container(
+                width: 95,
+                height: 95,
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.image, size: 40),
               ),
             ),
+
             const SizedBox(width: 14),
+
+            // TEXT AREA
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // TITLE + STATUS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -85,27 +123,53 @@ class ItemCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 20,
+                            fontSize: 18,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      ItemStatusBadge(status: status),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _statusColor(status),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          status,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(fakultas,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                      )),
-                  const SizedBox(height: 2),
-                  Text(tanggal,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      )),
+
+                  const SizedBox(height: 8),
+
+                  // FAKULTAS
+                  Text(
+                    fakultas,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  // TANGGAL
+                  Text(
+                    tanggal,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14,
+                    ),
+                  ),
                 ],
               ),
             ),

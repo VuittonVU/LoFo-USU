@@ -27,7 +27,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool loading = false;
 
-  final _auth = AuthService();
+  /// FIX: pake singleton instance
+  final _auth = AuthService.instance;
 
   // SIGN UP HANDLER
   Future<void> _handleSignUp() async {
@@ -54,7 +55,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    LofoSnack.show(context, "Berhasil membuat akun!");
+    // SIGN UP SUCCESS → buat doc Firestore
+    final user = _auth.currentUser!;
+    await _auth.createUserDocumentIfNotExists(user);
+
+    LofoSnack.show(context, "Berhasil membuat akun! Verifikasi email telah dikirim.");
 
     context.go(AppRoutes.otp);
   }
@@ -116,19 +121,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
           PrimaryButton(
             text: loading ? "Memproses..." : "Daftar",
-            onPressed: () async {
-              final msg = await _auth.signUp(
-                emailCtrl.text.trim(),
-                passCtrl.text.trim(),
-              );
-
-              if (msg != null) {
-                LofoSnack.show(context, msg, error: true);
-                return;
-              }
-
-              context.go('/email-verification');  // halaman baru
-            },
+            onPressed: loading ? null : _handleSignUp,
           ),
           const SizedBox(height: 20),
 
