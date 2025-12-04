@@ -76,6 +76,12 @@ class FirestoreService {
     });
   }
 
+  Future<void> updateProfilePhoto(String userId, String url) async {
+    await FirebaseFirestore.instance.collection("users").doc(userId).update({
+      "fotoProfil": url,
+    });
+  }
+
   // ============================================================
   // UPDATE FOTO LAPORAN (FOTO BARANG)
   // ============================================================
@@ -138,11 +144,13 @@ class FirestoreService {
   Future<void> confirmSelesai({
     required String laporanId,
     required List<String> dokumentasiUrls,
+    Map<String, dynamic>? detail,
   }) async {
     await laporanRef.doc(laporanId).update({
       "status_laporan": "Selesai",
       "dokumentasi": dokumentasiUrls,
-      "updatedAt": Timestamp.now(),
+      if (detail != null) "detail": detail,
+      "updatedAt": FieldValue.serverTimestamp(),
     });
   }
 

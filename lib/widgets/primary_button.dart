@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback? onPressed; // <— boleh null untuk disabled
+  final VoidCallback? onPressed; // nullable untuk disabled
 
   const PrimaryButton({
     super.key,
     required this.text,
-    this.onPressed, // <— diubah jadi nullable
+    this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool disabled = onPressed == null;
+
+    // warna default & disabled
+    final Color defaultGreen = const Color(0xFF4CAF50);
+    final Color disabledGreen = const Color(0xFF4CAF50).withValues(alpha: 0.5);
 
     return GestureDetector(
       onTap: disabled ? null : onPressed,
@@ -21,9 +24,7 @@ class PrimaryButton extends StatelessWidget {
         width: double.infinity,
         height: 55,
         decoration: BoxDecoration(
-          color: disabled
-              ? AppColors.green.withOpacity(0.5)  // warna saat disabled
-              : AppColors.green,
+          color: disabled ? disabledGreen : defaultGreen,
           borderRadius: BorderRadius.circular(40),
         ),
         child: Center(

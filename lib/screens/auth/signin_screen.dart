@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../config/routes.dart';
 import '../../services/auth_service.dart';
@@ -21,31 +22,29 @@ class _SignInScreenState extends State<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
-  /// FIX: pake singleton instance
   final _auth = AuthService.instance;
 
   bool loading = false;
   bool showPass = false;
 
   // ============================================================
-  // HANDLE LOGIN
+  // LOGIN HANDLER
   // ============================================================
   Future<void> _handleLogin() async {
-    final emailErr = Validators.usuEmail(emailCtrl.text.trim());
-    final passErr = Validators.password(passCtrl.text.trim());
+    final email = emailCtrl.text.trim();
+    final pass = passCtrl.text.trim();
+
+    final emailErr = Validators.usuEmail(email);
+    final passErr = Validators.password(pass);
 
     if (emailErr != null) return LofoSnack.show(context, emailErr, error: true);
     if (passErr != null) return LofoSnack.show(context, passErr, error: true);
 
     setState(() => loading = true);
 
-    final errorMsg = await _auth.signIn(
-      emailCtrl.text.trim(),
-      passCtrl.text.trim(),
-    );
+    final errorMsg = await _auth.signIn(email, pass);
 
     if (!mounted) return;
-
     setState(() => loading = false);
 
     if (errorMsg != null) {
@@ -53,18 +52,26 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
-    // LOGIN SUCCESS → buat doc user kalau belum ada
-    final user = _auth.currentUser!;
-    await _auth.createUserDocumentIfNotExists(user);
+    // refresh user
+    final user = FirebaseAuth.instance.currentUser;
+    await user?.reload();
+
+    if (user != null && !user.emailVerified) {
+      context.go(AppRoutes.emailVerification);
+      return;
+    }
+
+    // create user doc if not exists
+    if (user != null) {
+      await _auth.createUserDocumentIfNotExists(user);
+    }
 
     LofoSnack.show(context, "Login berhasil!");
-
-    // GO TO MAIN
     context.go(AppRoutes.mainNav);
   }
 
   // ============================================================
-  // UI (AMAN, GAK DIUBAH)
+  // UI
   // ============================================================
   @override
   Widget build(BuildContext context) {
@@ -85,16 +92,10 @@ class _SignInScreenState extends State<SignInScreen> {
 
           const SizedBox(height: 16),
 
-          Center(
-            child: Image.asset(
-              "assets/logo.png",
-              height: 250,
-            ),
-          ),
+          Center(child: Image.asset("assets/logo.png", height: 250)),
 
           const SizedBox(height: 32),
 
-          // EMAIL INPUT
           LofoTextField(
             label: "Email USU",
             hint: "Masukkan email USU",
@@ -102,9 +103,9 @@ class _SignInScreenState extends State<SignInScreen> {
             controller: emailCtrl,
             showInternalLabel: true,
           ),
+
           const SizedBox(height: 15),
 
-          // PASSWORD INPUT
           LofoTextField(
             label: "Password",
             hint: "Masukkan password",
@@ -120,7 +121,6 @@ class _SignInScreenState extends State<SignInScreen> {
 
           const SizedBox(height: 40),
 
-          // LOGIN BUTTON
           PrimaryButton(
             text: loading ? "Memproses..." : "Masuk",
             onPressed: loading ? null : _handleLogin,
@@ -140,8 +140,6 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
             ),
           ),
-
-          const SizedBox(height: 24),
         ],
       ),
     );

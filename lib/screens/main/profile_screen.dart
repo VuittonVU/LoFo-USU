@@ -4,57 +4,64 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  // --------------------------------------------------
-  // Ambil user data dari Firestore
-  // --------------------------------------------------
-  Future<Map<String, dynamic>?> _getUserData() async {
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // ============================================================
+  // GET USER DATA
+  // ============================================================
+  Future<Map<String, dynamic>> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return null;
+    if (user == null) return {};
 
-    final snap =
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-    return snap.data();
+    return snap.data() ?? {};
   }
 
-  // --------------------------------------------------
-  // Jumlah laporan user
-  // --------------------------------------------------
-  Stream<int> _countUserReports(String userId) {
+  // ============================================================
+  // COUNT USER REPORTS
+  // ============================================================
+  Stream<int> _countUserReports(String uid) {
     return FirebaseFirestore.instance
-        .collection('laporan')
-        .where('id_pengguna', isEqualTo: userId)
+        .collection("laporan")
+        .where("id_pengguna", isEqualTo: uid)
         .snapshots()
-        .map((snap) => snap.size);
+        .map((s) => s.size);
   }
 
-  // --------------------------------------------------
-  // Jumlah laporan selesai
-  // --------------------------------------------------
-  Stream<int> _countReturned(String userId) {
+  // ============================================================
+  // COUNT FINISHED REPORTS
+  // ============================================================
+  Stream<int> _countReturned(String uid) {
     return FirebaseFirestore.instance
-        .collection('laporan')
-        .where('id_pengguna', isEqualTo: userId)
-        .where('status_laporan', isEqualTo: "Selesai")
+        .collection("laporan")
+        .where("id_pengguna", isEqualTo: uid)
+        .where("status_laporan", isEqualTo: "Selesai")
         .snapshots()
-        .map((snap) => snap.size);
+        .map((s) => s.size);
   }
 
-  // --------------------------------------------------
-  // Launcher Fix (versi baru url_launcher)
-  // --------------------------------------------------
-  Future<void> _launchUrl(String url) async {
-    if (url.isEmpty || url == "-") return;
+  // ============================================================
+  // SAFE URL LAUNCHER
+  // ============================================================
+  Future<void> _launch(String url) async {
+    if (url.trim().isEmpty || url == "-") return;
     final uri = Uri.parse(url);
-
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception("Gagal membuka $url");
-    }
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -62,9 +69,6 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F3E3),
 
-      // ============================================================
-      // TOP BAR
-      // ============================================================
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(90),
         child: Container(
@@ -78,20 +82,24 @@ class ProfileScreen extends StatelessWidget {
                 const Text(
                   "LoFo USU",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                  ),
+                      color: Colors.white,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700),
                 ),
+
                 Positioned(
                   right: 0,
                   child: PopupMenuButton(
                     icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onSelected: (value) {
+                    onSelected: (value) async {
                       if (value == "edit") {
-                        context.push('/edit-profile');
-                      } else if (value == "settings") {
-                        context.push('/account-settings');
+                        await context.push("/edit-profile");
+
+                        // 🔥 Setelah kembali dari edit-profile → REFRESH data
+                        setState(() {});
+                      }
+                      else if (value == "settings") {
+                        context.push("/account-settings");
                       }
                     },
                     itemBuilder: (_) => const [
@@ -100,7 +108,7 @@ class ProfileScreen extends StatelessWidget {
                           value: "settings", child: Text("Pengaturan Akun")),
                     ],
                   ),
-                ),
+                )
               ],
             ),
           ),
@@ -117,16 +125,19 @@ class ProfileScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final data = snapshot.data!;
-          final foto = data["fotoProfil"] ?? "";
-          final nama = data["nama"] ?? "-";
-          final prodi = data["prodi"] ?? "-";
-          final nim = data["nim"] ?? "-";
+          final data = snapshot.data as Map<String, dynamic>;
 
-          final phone = data["telepon"] ?? "-";
-          final ig = data["instagram"] ?? "-";
-          final wa = data["whatsapp"] ?? "-";
-          final email = user?.email ?? "-";
+          final foto = (data["fotoProfil"] ?? "").toString();
+          final nama = (data["nama"] ?? "-").toString();
+          final prodi = (data["prodi"] ?? "-").toString();
+          final nim = (data["nim"] ?? "-").toString();
+
+          final phone = (data["telepon"] ?? "-").toString();
+          final igRaw = (data["instagram"] ?? "-").toString();
+          final wa = (data["whatsapp"] ?? "-").toString();
+          final emailKontak = (data["email_kontak"] ?? "-").toString();
+
+          final ig = igRaw.startsWith("@") ? igRaw.substring(1) : igRaw;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -142,7 +153,8 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: ClipOval(
                     child: foto.isEmpty
-                        ? Image.asset("assets/images/pp.png", fit: BoxFit.cover)
+                        ? Image.asset("assets/images/pp.png",
+                        fit: BoxFit.cover)
                         : Image.network(
                       foto,
                       fit: BoxFit.cover,
@@ -154,11 +166,9 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                Text(
-                  nama,
-                  style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.w700),
-                ),
+                Text(nama,
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Text(prodi,
                     style:
@@ -169,7 +179,9 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // =========================== STATISTIK ===========================
+                // ============================================================
+                // STATISTIK
+                // ============================================================
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -185,7 +197,7 @@ class ProfileScreen extends StatelessWidget {
                       stream: _countReturned(user.uid),
                       builder: (_, snap) {
                         final c = snap.data ?? 0;
-                        return _statCard("$c", "Barang Dikembalikan");
+                        return _statCard("$c", "Dikembalikan");
                       },
                     ),
                   ],
@@ -193,55 +205,11 @@ class ProfileScreen extends StatelessWidget {
 
                 const SizedBox(height: 24),
 
-                // =========================== KONTAK ===========================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.green.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Kontak:",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 14),
-
-                      _contactItem(
-                        icon: Image.asset("assets/icons/phone.png", height: 22),
-                        label: "Nomor Telepon:",
-                        value: phone,
-                        onTap: () => _launchUrl("tel:$phone"),
-                      ),
-
-                      _contactItem(
-                        icon:
-                        Image.asset("assets/icons/instagram.png", height: 22),
-                        label: "Instagram:",
-                        value: ig,
-                        onTap: () => _launchUrl("https://instagram.com/$ig"),
-                      ),
-
-                      _contactItem(
-                        icon:
-                        Image.asset("assets/icons/whatsapp.png", height: 22),
-                        label: "Whatsapp:",
-                        value: wa,
-                        onTap: () => _launchUrl("https://wa.me/$wa"),
-                      ),
-
-                      _contactItem(
-                        icon: Image.asset("assets/icons/mail.png", height: 22),
-                        label: "Email:",
-                        value: email,
-                        onTap: () => _launchUrl("mailto:$email"),
-                      ),
-                    ],
-                  ),
-                )
+                // ============================================================
+                // KONTAK
+                // ============================================================
+                _buildContactSection(
+                    phone, igRaw, ig, wa, emailKontak),
               ],
             ),
           );
@@ -251,7 +219,43 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // WIDGET STAT CARD
+  // CONTACT SECTION
+  // ============================================================
+  Widget _buildContactSection(
+      String phone, String igRaw, String ig, String wa, String emailKontak) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.green.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("Kontak:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 14),
+
+          _contactItem(Icons.phone, "Nomor Telepon:", phone,
+                  () => _launch("tel:$phone")),
+
+          _contactItem(Icons.camera_alt, "Instagram:", igRaw,
+                  () => _launch("https://instagram.com/$ig")),
+
+          _contactItem(Icons.chat, "WhatsApp:", wa,
+                  () => _launch("https://wa.me/$wa")),
+
+          _contactItem(Icons.mail, "Email Kontak:", emailKontak,
+                  () => _launch("mailto:$emailKontak")),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // STAT CARD
   // ============================================================
   Widget _statCard(String value, String label) {
     return Container(
@@ -274,28 +278,23 @@ class ProfileScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // WIDGET KONTAK ITEM
+  // CONTACT ITEM
   // ============================================================
-  Widget _contactItem({
-    required Widget icon,
-    required String label,
-    required String value,
-    VoidCallback? onTap,
-  }) {
+  Widget _contactItem(
+      IconData icon, String label, String value, VoidCallback onTap) {
     return InkWell(
-      onTap: onTap,
+      onTap: value == "-" ? null : onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border:
-          Border.all(color: Colors.green.withOpacity(0.4), width: 1.4),
+          border: Border.all(color: Colors.green.withOpacity(0.4)),
         ),
         child: Row(
           children: [
-            icon,
+            Icon(icon, color: Colors.green),
             const SizedBox(width: 10),
             Expanded(
               child: RichText(

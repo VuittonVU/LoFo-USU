@@ -24,21 +24,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   bool showPass = false;
   bool showConfirmPass = false;
-
   bool loading = false;
 
-  /// FIX: pake singleton instance
   final _auth = AuthService.instance;
 
-  // SIGN UP HANDLER
-  Future<void> _handleSignUp() async {
-    final emailErr = Validators.usuEmail(emailCtrl.text);
-    final passErr = Validators.password(passCtrl.text);
-    final confirmErr = Validators.confirmPassword(passCtrl.text, confirmCtrl.text);
+  // ===========================
+  // VALIDATION
+  // ===========================
+  bool get validEmail =>
+      Validators.usuEmail(emailCtrl.text.trim()) == null;
 
-    if (emailErr != null) return LofoSnack.show(context, emailErr, error: true);
-    if (passErr != null) return LofoSnack.show(context, passErr, error: true);
-    if (confirmErr != null) return LofoSnack.show(context, confirmErr, error: true);
+  bool get validPass => passCtrl.text.trim().length >= 6;
+
+  bool get validConfirm =>
+      confirmCtrl.text.trim() == passCtrl.text.trim();
+
+  bool get formValid =>
+      validEmail && validPass && validConfirm;
+
+  @override
+  void initState() {
+    super.initState();
+    emailCtrl.addListener(_refresh);
+    passCtrl.addListener(_refresh);
+    confirmCtrl.addListener(_refresh);
+  }
+
+  void _refresh() => setState(() {});
+
+  // ===========================
+  // SIGN UP
+  // ===========================
+  Future<void> _handleSignUp() async {
+    if (!formValid) {
+      LofoSnack.show(context, "Periksa kembali data yang kamu isi.",
+          error: true);
+      return;
+    }
+
+    if (loading) return;
 
     setState(() => loading = true);
 
@@ -48,85 +72,109 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     if (!mounted) return;
-    setState(() => loading = false);
 
     if (err != null) {
-      LofoSnack.show(context, err, error: true);
-      return;
+      setState(() => loading = false);
+      return LofoSnack.show(context, err, error: true);
     }
 
-    // SIGN UP SUCCESS → buat doc Firestore
     final user = _auth.currentUser!;
     await _auth.createUserDocumentIfNotExists(user);
 
-    LofoSnack.show(context, "Berhasil membuat akun! Verifikasi email telah dikirim.");
+    setState(() => loading = false);
 
-    context.go(AppRoutes.otp);
+    LofoSnack.show(context, "Akun berhasil dibuat! Verifikasi email kamu ya.");
+
+    context.go(AppRoutes.emailVerification);
   }
 
+  // ===========================
+  // UI
+  // ===========================
   @override
   Widget build(BuildContext context) {
     return LofoScaffold(
-      child: Column(
-        children: [
-          const SizedBox(height: 60),
-          const Text(
-            "Halo, sobat USU!",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF2F9E44),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 60),
+            const Text(
+              "Daftar Akun Baru",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF2F9E44),
+              ),
             ),
-          ),
-          const SizedBox(height: 15),
-          Image.asset("assets/logo.png", height: 250),
-          const SizedBox(height: 20),
 
-          LofoTextField(
-            label: "Email USU",
-            hint: "Masukkan email USU",
-            icon: Icons.mail,
-            controller: emailCtrl,
-            showInternalLabel: true,
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          LofoTextField(
-            label: "Password",
-            hint: "Masukkan password",
-            icon: Icons.lock,
-            controller: passCtrl,
-            obscure: !showPass,
-            showInternalLabel: true,
-            suffix: GestureDetector(
-              onTap: () => setState(() => showPass = !showPass),
-              child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+            // =========================
+            // EMAIL
+            // =========================
+            LofoTextField(
+              label: "Email USU",
+              hint: "example@students.usu.ac.id",
+              icon: Icons.mail,
+              controller: emailCtrl,
+              showInternalLabel: true,
             ),
-          ),
-          const SizedBox(height: 20),
+            if (!validEmail && emailCtrl.text.isNotEmpty)
+              _error("Gunakan email USU yang valid"),
 
-          LofoTextField(
-            label: "Konfirmasi Password",
-            hint: "Konfirmasi password",
-            icon: Icons.lock_outline,
-            controller: confirmCtrl,
-            obscure: !showConfirmPass,
-            showInternalLabel: true,
-            suffix: GestureDetector(
-              onTap: () => setState(() => showConfirmPass = !showConfirmPass),
-              child: Icon(showConfirmPass ? Icons.visibility_off : Icons.visibility),
+            const SizedBox(height: 20),
+
+            // =========================
+            // PASSWORD
+            // =========================
+            LofoTextField(
+              label: "Password",
+              hint: "Minimal 6 karakter",
+              icon: Icons.lock,
+              controller: passCtrl,
+              obscure: !showPass,
+              suffix: GestureDetector(
+                onTap: () => setState(() => showPass = !showPass),
+                child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+              ),
             ),
-          ),
-          const SizedBox(height: 40),
+            if (!validPass && passCtrl.text.isNotEmpty)
+              _error("Password minimal 6 karakter"),
 
-          PrimaryButton(
-            text: loading ? "Memproses..." : "Daftar",
-            onPressed: loading ? null : _handleSignUp,
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          Center(
-            child: GestureDetector(
+            // =========================
+            // CONFIRM PASSWORD
+            // =========================
+            LofoTextField(
+              label: "Konfirmasi Password",
+              hint: "Ulangi password",
+              icon: Icons.lock_outline,
+              controller: confirmCtrl,
+              obscure: !showConfirmPass,
+              suffix: GestureDetector(
+                onTap: () =>
+                    setState(() => showConfirmPass = !showConfirmPass),
+                child: Icon(
+                    showConfirmPass ? Icons.visibility_off : Icons.visibility),
+              ),
+            ),
+            if (!validConfirm && confirmCtrl.text.isNotEmpty)
+              _error("Password tidak sama"),
+
+            const SizedBox(height: 40),
+
+            // =========================
+            // BUTTON SIGN UP
+            // =========================
+            PrimaryButton(
+              text: loading ? "Memproses..." : "Daftar",
+              onPressed: formValid && !loading ? _handleSignUp : null,
+            ),
+
+            const SizedBox(height: 20),
+
+            GestureDetector(
               onTap: () => context.go(AppRoutes.signIn),
               child: const Text(
                 "Sudah punya akun? Masuk",
@@ -136,9 +184,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-        ],
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _error(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, left: 4),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.red, fontSize: 12),
       ),
     );
   }

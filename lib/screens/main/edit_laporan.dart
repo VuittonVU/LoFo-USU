@@ -37,6 +37,11 @@ class EditLaporanScreen extends StatefulWidget {
 
 class _EditLaporanScreenState extends State<EditLaporanScreen> {
   final picker = ImagePicker();
+
+  /// Foto lama dari server
+  late List<String> oldImages;
+
+  /// Foto baru dari device
   List<File> newImages = [];
 
   final namaCtrl = TextEditingController();
@@ -45,9 +50,13 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
   final kategoriCtrl = TextEditingController();
   final deskripsiCtrl = TextEditingController();
 
+  bool _saving = false;
+
   @override
   void initState() {
     super.initState();
+    oldImages = [...widget.images];
+
     namaCtrl.text = widget.title;
     lokasiCtrl.text = widget.locationFound;
     tanggalCtrl.text = widget.dateFound;
@@ -55,9 +64,20 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     deskripsiCtrl.text = widget.description;
   }
 
-  // ===================================================
-  // PICK NEW IMAGE
-  // ===================================================
+  // ============================================================
+  // VALIDASI NAMA
+  // ============================================================
+  String? _validateName(String v) {
+    if (v.trim().isEmpty) return "Nama barang wajib diisi";
+    if (!RegExp(r"^[a-zA-Z\s]+$").hasMatch(v.trim())) {
+      return "Nama barang hanya boleh alfabet";
+    }
+    return null;
+  }
+
+  // ============================================================
+  // AMBIL FOTO BARU
+  // ============================================================
   Future pickImage() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
@@ -66,9 +86,25 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     }
   }
 
-  // ===================================================
-  // FULLSCREEN IMAGE POPUP (Native Flutter)
-  // ===================================================
+  // ============================================================
+  // HAPUS FOTO LAMA
+  // ============================================================
+  void deleteOldImage(int index) {
+    oldImages.removeAt(index);
+    setState(() {});
+  }
+
+  // ============================================================
+  // HAPUS FOTO BARU
+  // ============================================================
+  void deleteNewImage(int index) {
+    newImages.removeAt(index);
+    setState(() {});
+  }
+
+  // ============================================================
+  // FULLSCREEN VIEW
+  // ============================================================
   void _openFullImage(String url) {
     showDialog(
       context: context,
@@ -78,13 +114,10 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
           onTap: () => Navigator.pop(context),
           child: Container(
             color: Colors.black,
-            child: InteractiveViewer(
-              panEnabled: true,
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: Center(
-                child: Image.network(url),
-              ),
+            child: Center(
+              child: url.startsWith("http")
+                  ? Image.network(url)
+                  : Image.file(File(url)),
             ),
           ),
         );
@@ -92,46 +125,92 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     );
   }
 
-  // ===================================================
+  // ============================================================
+  // DATE PICKER
+  // ============================================================
+  Future pickDate() async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(2020),
+      lastDate: now,
+      helpText: "Pilih tanggal ditemukan",
+    );
+
+    if (selected != null) {
+      tanggalCtrl.text =
+      "${selected.day.toString().padLeft(2, '0')}/"
+          "${selected.month.toString().padLeft(2, '0')}/"
+          "${selected.year}";
+      setState(() {});
+    }
+  }
+
+  // ============================================================
   // SAVE LAPORAN
-  // ===================================================
+  // ============================================================
   Future _saveLaporan() async {
+    if (_saving) return;
+
+    final err = _validateName(namaCtrl.text);
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
+
+    _saving = true;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
 
-    List<String> finalImages = [...widget.images];
+    List<String> finalImages = [...oldImages];
 
-    // upload foto baru
-    for (var img in newImages) {
-      final url = await StorageService.instance.uploadLaporanPhoto(img);
-      finalImages.add(url);
+    try {
+      // Upload foto baru
+      for (var img in newImages) {
+        final url = await StorageService.instance.uploadLaporanPhoto(img);
+        finalImages.add(url);
+      }
+
+      // Update text
+      await FirestoreService.instance.updateLaporan(
+        widget.laporanId,
+        {
+          "nama_barang": namaCtrl.text.trim(),
+          "tanggal": tanggalCtrl.text.trim(),
+          "lokasi": lokasiCtrl.text.trim(),
+          "kategori": kategoriCtrl.text.trim(),
+          "deskripsi": deskripsiCtrl.text.trim(),
+        },
+      );
+
+      // Update foto
+      await FirestoreService.instance.updateLaporanPhotos(
+        laporanId: widget.laporanId,
+        fotoUrls: finalImages,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        context.pop(true);
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal menyimpan: $e")),
+      );
     }
 
-    // update text fields
-    await FirestoreService.instance.updateLaporan(
-      widget.laporanId,
-      {
-        "nama_barang": namaCtrl.text,
-        "tanggal": tanggalCtrl.text,
-        "lokasi": lokasiCtrl.text,
-        "kategori": kategoriCtrl.text,
-        "deskripsi": deskripsiCtrl.text,
-      },
-    );
-
-    // update foto
-    await FirestoreService.instance.updateLaporanPhotos(
-      laporanId: widget.laporanId,
-      fotoUrls: finalImages,
-    );
-
-    Navigator.pop(context);
-    context.pop();
+    _saving = false;
   }
 
+  // ============================================================
+  // UI
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,18 +228,7 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
               child: Column(
                 children: [
 
-                  // IMAGE BOX
-                  GestureDetector(
-                    onTap: () {
-                      if (newImages.isNotEmpty) {
-                        _openFullImage(newImages.last.path);
-                      } else if (widget.images.isNotEmpty) {
-                        _openFullImage(widget.images.first);
-                      }
-                    },
-                    onDoubleTap: pickImage,
-                    child: _imageBox(),
-                  ),
+                  _imageSection(),
 
                   const SizedBox(height: 20),
 
@@ -172,12 +240,17 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
                   const SizedBox(height: 20),
 
                   _formBox([
-                    _label("Tanggal"),
-                    _editable(tanggalCtrl),
+                    _label("Tanggal Ditemukan (tap untuk pilih)"),
+                    GestureDetector(
+                      onTap: pickDate,
+                      child: AbsorbPointer(child: _editable(tanggalCtrl)),
+                    ),
                     const SizedBox(height: 12),
+
                     _label("Lokasi"),
                     _editable(lokasiCtrl),
                     const SizedBox(height: 12),
+
                     _label("Kategori"),
                     _editable(kategoriCtrl),
                   ]),
@@ -191,28 +264,7 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
 
                   const SizedBox(height: 28),
 
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(40),
-                        ),
-                      ),
-                      onPressed: _saveLaporan,
-                      child: const Text(
-                        "Simpan Perubahan",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20)
+                  _saveButton(),
                 ],
               ),
             ),
@@ -222,48 +274,118 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     );
   }
 
-  // ===================================================
-  // COMPONENTS
-  // ===================================================
-  Widget _imageBox() {
-    if (newImages.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.file(
-          newImages.last,
-          height: 200,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
+  // ============================================================
+  // IMAGE SECTION — Bisa Hapus & Tambah Foto
+  // ============================================================
+  Widget _imageSection() {
+    return Column(
+      children: [
+        // FOTO LAMA
+        if (oldImages.isNotEmpty)
+          ...List.generate(oldImages.length, (i) {
+            return Stack(
+              children: [
+                GestureDetector(
+                  onTap: () => _openFullImage(oldImages[i]),
+                  child: _imageBox(oldImages[i]),
+                ),
+                _deleteBtn(() => deleteOldImage(i)),
+              ],
+            );
+          }),
 
-    final img = widget.images.isNotEmpty ? widget.images.first : null;
+        // FOTO BARU
+        ...List.generate(newImages.length, (i) {
+          return Stack(
+            children: [
+              GestureDetector(
+                onTap: () => _openFullImage(newImages[i].path),
+                child: _imageBox(newImages[i].path),
+              ),
+              _deleteBtn(() => deleteNewImage(i)),
+            ],
+          );
+        }),
 
-    if (img == null) {
-      return Container(
-        height: 200,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: Colors.grey.shade300,
+        // BUTTON TAMBAH
+        GestureDetector(
+          onTap: pickImage,
+          child: Container(
+            height: 160,
+            width: double.infinity,
+            margin: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(
+              child: Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+            ),
+          ),
         ),
-        child: const Center(
-          child: Icon(Icons.add_photo_alternate, size: 60, color: Colors.grey),
-        ),
-      );
-    }
+      ],
+    );
+  }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Image.network(
-        img,
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
+  Widget _deleteBtn(VoidCallback onTap) {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(40),
+          ),
+          child: const Icon(Icons.close, color: Colors.white),
+        ),
       ),
     );
   }
 
+  Widget _imageBox(String path) {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: path.startsWith("http")
+            ? Image.network(path, fit: BoxFit.cover)
+            : Image.file(File(path), fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  Widget _saveButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: _saveLaporan,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(40),
+          ),
+        ),
+        child: const Text(
+          "Simpan Perubahan",
+          style: TextStyle(
+            color: Color(0xFFFFFFFF),
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // FORM COMPONENTS
+  // ============================================================
   Widget _formBox(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -273,7 +395,9 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 

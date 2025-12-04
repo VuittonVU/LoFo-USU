@@ -19,15 +19,16 @@ class AddLaporanScreen extends StatefulWidget {
 class _AddLaporanScreenState extends State<AddLaporanScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController namaBarangCtrl = TextEditingController();
-  final TextEditingController pelaporCtrl = TextEditingController();
-  final TextEditingController tanggalCtrl = TextEditingController();
-  final TextEditingController lokasiCtrl = TextEditingController();
-  final TextEditingController kategoriCtrl = TextEditingController();
-  final TextEditingController deskripsiCtrl = TextEditingController();
+  final namaBarangCtrl = TextEditingController();
+  final pelaporCtrl = TextEditingController();
+  final tanggalCtrl = TextEditingController();
+  final lokasiCtrl = TextEditingController();
+  final kategoriCtrl = TextEditingController();
+  final deskripsiCtrl = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
   List<XFile> _pickedImages = [];
+
   bool _isPicking = false;
   bool _isSubmitting = false;
 
@@ -42,30 +43,75 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     super.dispose();
   }
 
+  // ===================================================================
+  // VALIDATION EXTRA
+  // ===================================================================
+  String? _validateName(String? v) {
+    if (v == null || v.trim().isEmpty) return "Wajib diisi";
+    if (!RegExp(r"^[a-zA-Z\s]+$").hasMatch(v.trim())) {
+      return "Hanya boleh huruf";
+    }
+    return null;
+  }
+
+  // ===================================================================
+  // DATE PICKER
+  // ===================================================================
+  Future<void> _pickDate() async {
+    final today = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: DateTime(2020),
+      lastDate: today,
+      helpText: "Pilih tanggal ditemukan",
+    );
+
+    if (picked != null) {
+      tanggalCtrl.text =
+      "${picked.day.toString().padLeft(2, '0')}-"
+          "${picked.month.toString().padLeft(2, '0')}-"
+          "${picked.year}";
+      setState(() {});
+    }
+  }
+
+  // ===================================================================
+  // IMAGE PICKER
+  // ===================================================================
   Future<void> _pickImages() async {
-    if (_isPicking) return; // hindari error "already_active"
+    if (_isPicking) return;
     _isPicking = true;
 
     try {
       final result = await _picker.pickMultiImage(imageQuality: 80);
-      if (result != null && mounted) {
-        setState(() {
-          _pickedImages = result;
-        });
+      if (result.isNotEmpty && mounted) {
+        setState(() => _pickedImages = result);
       }
     } finally {
       _isPicking = false;
     }
   }
 
+  // ===================================================================
+  // SUBMIT
+  // ===================================================================
   Future<void> _submit() async {
     if (_isSubmitting) return;
+
+    if (_pickedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Minimal 1 foto wajib diupload.")),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Silakan login terlebih dahulu.')),
+        const SnackBar(content: Text("Silakan login terlebih dahulu.")),
       );
       return;
     }
@@ -73,20 +119,20 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // upload gambar
+      // Upload semua foto
       final fotoUrls = await StorageService.instance.uploadLaporanPhotos(
         userId: user.uid,
         files: _pickedImages,
       );
 
-      // kalau nama pelapor kosong → pakai displayName / email
+      // Nama pelapor fallback
       final namaPelapor = pelaporCtrl.text.isNotEmpty
           ? pelaporCtrl.text
-          : (user.displayName ?? user.email ?? '-');
+          : (user.displayName ?? user.email ?? "-");
 
       await FirestoreService.instance.createLaporan(
         userId: user.uid,
-        namaPelapor: namaPelapor,
+        namaPelapor: namaPelapor.trim(),
         namaBarang: namaBarangCtrl.text.trim(),
         tanggal: tanggalCtrl.text.trim(),
         deskripsi: deskripsiCtrl.text.trim(),
@@ -98,20 +144,24 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Laporan berhasil dikirim.')),
+        const SnackBar(content: Text("Laporan berhasil dikirim.")),
       );
 
-      context.go('${AppRoutes.mainNav}?startIndex=0');
+      context.go("${AppRoutes.mainNav}?startIndex=0");
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengirim laporan: $e')),
+        SnackBar(content: Text("Gagal mengirim laporan: $e")),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
+  // ===================================================================
+  // UI
+  // ===================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,7 +170,7 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
         children: [
           TopBarBackBtn(
             title: "LoFo USU",
-            onBack: () => context.go('${AppRoutes.mainNav}?startIndex=0'),
+            onBack: () => context.go("${AppRoutes.mainNav}?startIndex=0"),
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -129,7 +179,7 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // PICK IMAGE AREA
+                    // IMAGE PICKER
                     GestureDetector(
                       onTap: _pickImages,
                       child: Container(
@@ -146,22 +196,20 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                         )
                             : ListView.separated(
                           scrollDirection: Axis.horizontal,
-                          padding:
-                          const EdgeInsets.symmetric(horizontal: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8),
                           itemCount: _pickedImages.length,
                           separatorBuilder: (_, __) =>
                           const SizedBox(width: 8),
-                          itemBuilder: (_, i) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.file(
-                                File(_pickedImages[i].path),
-                                width: 150,
-                                height: 170,
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          },
+                          itemBuilder: (_, i) => ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(
+                              File(_pickedImages[i].path),
+                              width: 150,
+                              height: 170,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -169,68 +217,78 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                     const SizedBox(height: 20),
 
                     _formContainer(children: [
-                      _label("Nama barang:"),
+                      _label("Nama Barang:"),
+                      _textField(namaBarangCtrl, validator: _validateName),
+
+                      _label("Dilaporkan oleh (opsional):"),
                       _textField(
-                        namaBarangCtrl,
-                        validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                        pelaporCtrl,
+                        validator: (v) {
+                          if (v != null &&
+                              v.isNotEmpty &&
+                              !RegExp(r"^[a-zA-Z\s]+$")
+                                  .hasMatch(v.trim())) {
+                            return "Hanya huruf";
+                          }
+                          return null;
+                        },
                       ),
-                      _label("Dilaporkan oleh:"),
-                      _textField(pelaporCtrl),
                     ]),
 
                     const SizedBox(height: 20),
 
                     _formContainer(children: [
-                      const Text(
-                        "Detail",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                      const Text("Detail",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+
+                      _labelIcon("Tanggal ditemukan:", Icons.calendar_month),
+
+                      GestureDetector(
+                        onTap: _pickDate,
+                        child: AbsorbPointer(
+                          child: _textField(
+                            tanggalCtrl,
+                            validator: (v) =>
+                            v!.isEmpty ? "Wajib diisi" : null,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _labelIcon("Tanggal ditemukan:", Icons.calendar_month),
-                      _textField(
-                        tanggalCtrl,
-                        validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
-                      ),
+
                       _labelIcon("Lokasi ditemukan:", Icons.location_on),
                       _textField(
                         lokasiCtrl,
                         validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                        v!.isEmpty ? "Wajib diisi" : null,
                       ),
+
                       _labelIcon("Kategori:", Icons.list),
                       _textField(
                         kategoriCtrl,
                         validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                        v!.isEmpty ? "Wajib diisi" : null,
                       ),
                     ]),
 
                     const SizedBox(height: 20),
 
                     _formContainer(children: [
-                      const Text(
-                        "Deskripsi",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      const Text("Deskripsi",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       _textField(
                         deskripsiCtrl,
                         maxLines: 5,
                         validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
+                        v!.isEmpty ? "Wajib diisi" : null,
                       ),
                     ]),
 
                     const SizedBox(height: 30),
 
+                    // SUBMIT BUTTON
                     SizedBox(
                       width: 250,
                       height: 48,
@@ -243,14 +301,10 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
                         ),
                         onPressed: _isSubmitting ? null : _submit,
                         child: _isSubmitting
-                            ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.4,
-                            valueColor:
-                            AlwaysStoppedAnimation(Colors.white),
-                          ),
+                            ? const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                          AlwaysStoppedAnimation(Colors.white),
                         )
                             : const Text(
                           "Selesai",
@@ -274,9 +328,11 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     );
   }
 
+  // ===================================================================
+  // UI HELPERS
+  // ===================================================================
   Widget _formContainer({required List<Widget> children}) {
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -313,8 +369,8 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
       }) {
     return TextFormField(
       controller: c,
-      maxLines: maxLines,
       validator: validator,
+      maxLines: maxLines,
       decoration: InputDecoration(
         hintText: "Ketik disini...",
         enabledBorder: OutlineInputBorder(
@@ -323,7 +379,8 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+          borderSide:
+          const BorderSide(color: Color(0xFF4CAF50), width: 2),
         ),
       ),
     );

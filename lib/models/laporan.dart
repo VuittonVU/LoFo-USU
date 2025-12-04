@@ -11,7 +11,7 @@ class Laporan {
   final String deskripsi;
   final String tanggal;
   final List<String> fotoBarang;
-  final String statusLaporan; // Aktif / Claimed / Selesai
+  final String statusLaporan;
   final Timestamp createdAt;
   final Timestamp updatedAt;
 

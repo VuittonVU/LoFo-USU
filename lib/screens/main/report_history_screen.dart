@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/firestore_service.dart';
 import '../../widgets/item_card.dart';
+import '../../widgets/green_top_bar.dart';   // <-- PENTING
 import '../../config/routes.dart';
 
 enum ReportStatus { semua, aktif, dalamProses, selesai }
@@ -38,24 +39,16 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF4EF),
 
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF4CAF50),
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "LoFo USU",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 21,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
+      // ============================================================
+      // TOP GREEN BAR (REUSABLE WIDGET)
+      // ============================================================
+      appBar: const GreenTopBar(title: "LoFo USU"),
 
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 14),
+
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 18),
             child: Text(
@@ -66,11 +59,12 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
               ),
             ),
           ),
+
           const SizedBox(height: 14),
 
-          // =============================================
+          // ============================================================
           // FILTER STATUS
-          // =============================================
+          // ============================================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Container(
@@ -105,7 +99,9 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             color: selected ? Colors.white : Colors.black87,
-                            fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: selected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -118,9 +114,9 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
           const SizedBox(height: 14),
 
-          // =============================================
-          // STREAM RIWAYAT LAPORAN
-          // =============================================
+          // ============================================================
+          // STREAM LIST RIWAYAT LAPORAN
+          // ============================================================
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: FirestoreService.instance.streamLaporanByUser(userId),
@@ -144,7 +140,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                   );
                 }
 
-                // FILTER STATUS
+                // FILTER
                 List<Map<String, dynamic>> filtered = data;
 
                 if (_filter != ReportStatus.semua) {
@@ -156,7 +152,8 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                   };
 
                   filtered = filtered
-                      .where((d) => (d['status_laporan'] ?? "") == filterText)
+                      .where((d) =>
+                  (d['status_laporan'] ?? "").toString() == filterText)
                       .toList();
                 }
 
@@ -173,27 +170,23 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                   );
                 }
 
-                // =============================================
-                // LIST ITEMCARD (creator → detailPelapor)
-                // =============================================
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: 100),
                   itemCount: filtered.length,
                   itemBuilder: (_, index) {
                     final item = filtered[index];
-
                     final List<String> images =
                     List<String>.from(item['foto_barang'] ?? []);
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 10),
                       child: Transform.scale(
                         scale: 1.085,
                         child: ItemCard(
                           laporanId: item['id'],
                           images: images,
                           ownerId: item['id_pengguna'] ?? "",
-
                           title: item['nama_barang'] ?? "-",
                           fakultas: item['lokasi'] ?? "-",
                           tanggal: item['tanggal'] ?? "-",
@@ -202,7 +195,6 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                           deskripsi: item['deskripsi'] ?? "-",
                           reporterName: item['nama_pelapor'] ?? "-",
 
-                          // 🔥 ALWAYS CREATOR → MASUK DETAIL PELAPOR
                           onTap: () {
                             context.push(AppRoutes.detailPelapor, extra: {
                               "laporanId": item["id"],
@@ -215,7 +207,8 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                               "description": item["deskripsi"],
                               "status": item["status_laporan"],
                               "ownerId": item["id_pengguna"],
-                              "dokumentasi": List<String>.from(item["dokumentasi"] ?? []),
+                              "dokumentasi":
+                              List<String>.from(item["dokumentasi"] ?? []),
                             });
                           },
                         ),

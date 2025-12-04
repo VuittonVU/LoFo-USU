@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ====== ONBOARDING ======
 import '../screens/onboarding/splash_screen.dart';
@@ -9,7 +10,6 @@ import '../screens/onboarding/welcome_screen.dart';
 import '../screens/auth/signin_screen.dart';
 import '../screens/auth/signup_screen.dart';
 import '../screens/auth/EmailVerificationScreen.dart';
-import '../screens/auth/otp_screen.dart';
 import '../screens/auth/identitas_screen.dart';
 import '../screens/auth/kontak_screen.dart';
 import '../screens/auth/berhasil_screen.dart';
@@ -42,7 +42,7 @@ class AppRoutes {
   // AUTH
   static const String signIn = '/signin';
   static const String signUp = '/signup';
-  static const String otp = '/otp';
+  static const String emailVerification = '/email-verification';
   static const String identitas = '/identitas';
   static const String kontak = '/kontak';
   static const String berhasil = '/berhasil';
@@ -72,6 +72,46 @@ GoRouter createRouter() {
   return GoRouter(
     initialLocation: AppRoutes.splash,
 
+    // ============================================================
+    // 🔥 ROUTE GUARD / MIDDLEWARE
+    // ============================================================
+    redirect: (context, state) {
+      final user = FirebaseAuth.instance.currentUser;
+      final loc = state.uri.path;
+
+      // halaman auth yang aman diakses tanpa login
+      final publicRoutes = {
+        AppRoutes.splash,
+        AppRoutes.welcome,
+        AppRoutes.signIn,
+        AppRoutes.signUp,
+        AppRoutes.emailVerification,
+      };
+
+      // ---------------------
+      // CASE 1: User BELUM login
+      // ---------------------
+      if (user == null) {
+        if (publicRoutes.contains(loc)) return null;
+        return AppRoutes.signIn;
+      }
+
+      // reload user
+      user.reload();
+
+      // ---------------------
+      // CASE 2: User SUDAH login tetapi BELUM verified
+      // ---------------------
+      if (!user.emailVerified && loc != AppRoutes.emailVerification) {
+        return AppRoutes.emailVerification;
+      }
+
+      // ---------------------
+      // CASE 3: Verified user → bebas
+      // ---------------------
+      return null;
+    },
+
     routes: [
 
       // ============================================================
@@ -89,16 +129,33 @@ GoRouter createRouter() {
       // ============================================================
       // AUTH
       // ============================================================
-      GoRoute(path: AppRoutes.signIn, builder: (_, __) => const SignInScreen()),
-      GoRoute(path: AppRoutes.signUp, builder: (_, __) => const SignUpScreen()),
-      GoRoute(path: "/email-verification", builder: (_, __) => const EmailVerificationScreen()),
-      GoRoute(path: AppRoutes.otp, builder: (_, __) => const OtpScreen()),
-      GoRoute(path: AppRoutes.identitas, builder: (_, __) => const IdentitasScreen()),
-      GoRoute(path: AppRoutes.kontak, builder: (_, __) => const KontakScreen()),
-      GoRoute(path: AppRoutes.berhasil, builder: (_, __) => const BerhasilScreen()),
+      GoRoute(
+        path: AppRoutes.signIn,
+        builder: (_, __) => const SignInScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.signUp,
+        builder: (_, __) => const SignUpScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.emailVerification,
+        builder: (_, __) => const EmailVerificationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.identitas,
+        builder: (_, __) => const IdentitasScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.kontak,
+        builder: (_, __) => const KontakScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.berhasil,
+        builder: (_, __) => const BerhasilScreen(),
+      ),
 
       // ============================================================
-      // MAIN NAV
+      // MAIN NAVIGATION
       // ============================================================
       GoRoute(
         path: AppRoutes.mainNav,
@@ -151,7 +208,6 @@ GoRouter createRouter() {
         },
       ),
 
-
       // ============================================================
       // DETAIL — UMUM
       // ============================================================
@@ -197,16 +253,16 @@ GoRouter createRouter() {
         },
       ),
 
-      // ============================
+      // ============================================================
       // EDIT DOKUMENTASI
-      // ============================
+      // ============================================================
       GoRoute(
         path: AppRoutes.editDokumentasi,
         builder: (_, state) {
           final data = state.extra as Map<String, dynamic>?;
 
           return EditDokumentasiScreen(
-            laporanId: data?["laporanId"],   // WAJIB ADA
+            laporanId: data?["laporanId"],
             title: data?["title"] ?? "-",
           );
         },
@@ -227,9 +283,18 @@ GoRouter createRouter() {
       // ============================================================
       // PROFILE
       // ============================================================
-      GoRoute(path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
-      GoRoute(path: AppRoutes.editProfile, builder: (_, __) => const EditProfileScreen()),
-      GoRoute(path: AppRoutes.accountSettings, builder: (_, __) => const AccountSettingsScreen()),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (_, __) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (_, __) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.accountSettings,
+        builder: (_, __) => const AccountSettingsScreen(),
+      ),
 
       // ============================================================
       // REPORT HISTORY
@@ -238,12 +303,10 @@ GoRouter createRouter() {
         path: AppRoutes.reportHistory,
         builder: (_, __) => const ReportHistoryScreen(),
       ),
-
-
     ],
 
     // ============================================================
-    // ERROR PAGE
+    // 404 PAGE
     // ============================================================
     errorBuilder: (context, state) {
       return Scaffold(

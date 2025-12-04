@@ -8,8 +8,14 @@ class StorageService {
 
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
+  String _uniqueName() {
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    final rnd = DateTime.now().microsecondsSinceEpoch % 999999;
+    return "${ts}_$rnd.jpg";
+  }
+
   // ============================================================
-  // 1. Upload MULTIPLE foto barang untuk "Add Laporan"
+  // 1. UPLOAD MULTIPLE FOTO BARANG (Add Laporan)
   // ============================================================
   Future<List<String>> uploadLaporanPhotos({
     required String userId,
@@ -17,49 +23,98 @@ class StorageService {
   }) async {
     if (files.isEmpty) return [];
 
-    final List<String> urls = [];
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final urls = <String>[];
 
-    for (int i = 0; i < files.length; i++) {
-      final file = File(files[i].path);
+    for (final f in files) {
+      try {
+        final name = _uniqueName();
+        final ref = _storage.ref("laporan_photos/$userId/$name");
 
-      final ref = _storage
-          .ref()
-          .child('laporan_photos')
-          .child(userId)
-          .child('${timestamp}_$i.jpg');
-
-      final uploadTask = await ref.putFile(file);
-      final url = await uploadTask.ref.getDownloadURL();
-      urls.add(url);
+        await ref.putFile(File(f.path));
+        urls.add(await ref.getDownloadURL());
+      } catch (e) {
+        print("Upload gagal: $e");
+      }
     }
 
     return urls;
   }
 
   // ============================================================
-  // 2. Upload 1 foto barang (untuk Edit Laporan)
+  // 2. UPLOAD SATU FOTO BARANG (Edit Laporan)
   // ============================================================
-  Future<String> uploadLaporanPhoto(File file) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+  Future<String> uploadLaporanPhoto(File file, {String? userId}) async {
+    try {
+      final name = _uniqueName();
+      final path = userId == null
+          ? "laporan_photos/single/$name"
+          : "laporan_photos/$userId/$name";
 
-    final ref =
-    _storage.ref().child("laporan_photos").child("barang_$timestamp.jpg");
+      final ref = _storage.ref(path);
 
-    final uploadTask = await ref.putFile(file);
-    return await uploadTask.ref.getDownloadURL();
+      await ref.putFile(file);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print("Upload foto laporan gagal: $e");
+      rethrow;
+    }
   }
 
   // ============================================================
-  // 3. Upload Foto Dokumentasi (1 file)
+  // 3. UPLOAD FOTO DOKUMENTASI
   // ============================================================
-  Future<String> uploadDokumentasi(File file) async {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
+  Future<String> uploadDokumentasi(File file, {String? laporanId}) async {
+    try {
+      final name = _uniqueName();
+      final path = laporanId == null
+          ? "dokumentasi/general/$name"
+          : "dokumentasi/$laporanId/$name";
 
-    final ref =
-    _storage.ref().child("dokumentasi").child("dok_$timestamp.jpg");
+      final ref = _storage.ref(path);
 
-    final uploadTask = await ref.putFile(file);
-    return await uploadTask.ref.getDownloadURL();
+      await ref.putFile(file);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print("Upload dokumentasi gagal: $e");
+      rethrow;
+    }
+  }
+
+  Future<String> uploadProfilePhoto(String userId, File file) async {
+    final ref = FirebaseStorage.instance.ref("profile_photos/$userId.jpg");
+    await ref.putFile(file);
+    return await ref.getDownloadURL();
+  }
+
+
+  // ============================================================
+  // 4. UPLOAD KARTU IDENTITAS (KTM / KTP)
+  // ============================================================
+  Future<String> uploadKartuIdentitas({
+    required String userId,
+    required XFile file,
+  }) async {
+    try {
+      final name = _uniqueName();
+      final ref = _storage.ref("kartu_identitas/$userId/$name");
+
+      await ref.putFile(File(file.path));
+      return await ref.getDownloadURL();
+    } catch (e) {
+      print("Upload kartu identitas gagal: $e");
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // OPTIONAL: DELETE FILE
+  // ============================================================
+  Future<void> deleteFile(String url) async {
+    try {
+      final ref = _storage.refFromURL(url);
+      await ref.delete();
+    } catch (e) {
+      print("Gagal hapus file: $e");
+    }
   }
 }

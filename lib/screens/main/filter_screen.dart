@@ -41,7 +41,7 @@ class _FilterScreenState extends State<FilterScreen> {
     "Dokumen",
     "Payung",
     "SIM / STNK",
-    "Elektronik Lainnya",
+    "Elektronik",
   ];
 
   // ===========================

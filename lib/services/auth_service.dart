@@ -6,10 +6,11 @@ class AuthService {
   static final AuthService instance = AuthService._();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   User? get currentUser => _auth.currentUser;
 
-  // SIGN UP + kirim verifikasi email
+  // SIGN UP + EMAIL VERIFIKASI
   Future<String?> signUp(String email, String password) async {
     try {
       final cred = await _auth.createUserWithEmailAndPassword(
@@ -26,7 +27,7 @@ class AuthService {
     }
   }
 
-  // LOGIN dengan cek email terverifikasi
+  // LOGIN (WAJIB VERIFIED)
   Future<String?> signIn(String email, String password) async {
     try {
       final cred = await _auth.signInWithEmailAndPassword(
@@ -34,10 +35,9 @@ class AuthService {
         password: password,
       );
 
-      // CEK VERIFIKASI
       if (!cred.user!.emailVerified) {
         await _auth.signOut();
-        return "Email belum diverifikasi. Cek inbox atau spam.";
+        return "Email belum diverifikasi. Cek inbox atau folder spam.";
       }
 
       return null;
@@ -46,11 +46,11 @@ class AuthService {
     }
   }
 
+  // CREATE USER DOC
   Future<void> createUserDocumentIfNotExists(User user) async {
-    final doc = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final doc = _db.collection('users').doc(user.uid);
 
-    final snap = await doc.get();
-    if (!snap.exists) {
+    if (!(await doc.get()).exists) {
       await doc.set({
         "nama": "",
         "nim": "",
@@ -69,7 +69,7 @@ class AuthService {
     await _auth.signOut();
   }
 
-  //DELETE ACCOUNT
+  // DELETE ACCOUNT
   Future<String?> deleteAccount({
     required String email,
     required String password,
@@ -79,15 +79,12 @@ class AuthService {
 
       if (user == null) return "User tidak ditemukan.";
 
-      // WAJIB REAUTHENTICATE
       final cred = EmailAuthProvider.credential(
         email: email,
         password: password,
       );
 
       await user.reauthenticateWithCredential(cred);
-
-      // HAPUS USER
       await user.delete();
 
       return null;

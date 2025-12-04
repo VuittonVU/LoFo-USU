@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
+import '../../config/routes.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({super.key});
@@ -12,17 +14,60 @@ class EmailVerificationScreen extends StatefulWidget {
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   bool loading = false;
+  Timer? timer;
+  int resendCooldown = 0;
 
-  Future<void> _refreshStatus() async {
-    setState(() => loading = true);
-    await FirebaseAuth.instance.currentUser?.reload();
+  @override
+  void initState() {
+    super.initState();
+
+    // auto-refresh email verification each 3 seconds
+    timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      checkVerified();
+    });
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> checkVerified() async {
     final user = FirebaseAuth.instance.currentUser;
-
-    setState(() => loading = false);
+    await user?.reload();
 
     if (user != null && user.emailVerified) {
-      context.go('/main'); // sudah diverifikasi
+      timer?.cancel();
+      if (mounted) {
+        context.go(AppRoutes.identitas);
+      }
     }
+  }
+
+  Future<void> resendEmail() async {
+    if (resendCooldown > 0) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    await user?.sendEmailVerification();
+
+    setState(() {
+      resendCooldown = 30;
+    });
+
+    Timer.periodic(const Duration(seconds: 1), (t) {
+      setState(() => resendCooldown--);
+      if (resendCooldown == 0) t.cancel();
+    });
+  }
+
+  Future<void> backToSignUp() async {
+    // Logout dulu supaya user bisa daftar ulang
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
+
+    // Balik ke halaman daftar
+    context.go(AppRoutes.signUp);
   }
 
   @override
@@ -50,33 +95,45 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               const SizedBox(height: 10),
 
               const Text(
-                "Kami sudah mengirim link verifikasi. "
-                    "Buka email USU kamu dan klik link tersebut.",
+                "Kami sudah mengirim link verifikasi ke email USU yang kamu pakai.\n"
+                    "Cek inbox atau folder spam ya!",
                 textAlign: TextAlign.center,
               ),
 
               const SizedBox(height: 30),
 
               ElevatedButton(
-                onPressed: loading ? null : _refreshStatus,
+                onPressed: resendCooldown == 0 ? resendEmail : null,
                 child: Text(
-                  loading ? "Mengecek..." : "Saya sudah klik link",
+                  resendCooldown == 0
+                      ? "Kirim ulang email verifikasi"
+                      : "Tunggu $resendCooldown dtk",
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
 
-              TextButton(
+              ElevatedButton(
                 onPressed: () async {
-                  final user = FirebaseAuth.instance.currentUser;
-                  await user?.sendEmailVerification();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Email verifikasi dikirim ulang."),
-                    ),
-                  );
+                  await checkVerified();
                 },
-                child: const Text("Kirim ulang email verifikasi"),
+                child: const Text("Saya sudah klik link"),
+              ),
+
+              const SizedBox(height: 30),
+
+              // =====================================================
+              // NEW : Kembali ke Daftar (Jika salah email)
+              // =====================================================
+              TextButton(
+                onPressed: backToSignUp,
+                child: const Text(
+                  "Salah email? Kembali ke halaman daftar",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
