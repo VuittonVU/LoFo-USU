@@ -1,3 +1,5 @@
+// 📌 lib/config/routes.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,7 +18,6 @@ import '../screens/auth/berhasil_screen.dart';
 
 // ====== MAIN ======
 import '../screens/main/main_navigation_screen.dart';
-import '../screens/main/notification_screen.dart';
 import '../screens/main/filter_screen.dart';
 import '../screens/main/add_laporan_screen.dart';
 import '../screens/main/report_history_screen.dart';
@@ -73,13 +74,12 @@ GoRouter createRouter() {
     initialLocation: AppRoutes.splash,
 
     // ============================================================
-    // 🔥 ROUTE GUARD / MIDDLEWARE
+    // AUTH GUARD
     // ============================================================
     redirect: (context, state) {
       final user = FirebaseAuth.instance.currentUser;
       final loc = state.uri.path;
 
-      // halaman auth yang aman diakses tanpa login
       final publicRoutes = {
         AppRoutes.splash,
         AppRoutes.welcome,
@@ -88,75 +88,34 @@ GoRouter createRouter() {
         AppRoutes.emailVerification,
       };
 
-      // ---------------------
-      // CASE 1: User BELUM login
-      // ---------------------
       if (user == null) {
         if (publicRoutes.contains(loc)) return null;
         return AppRoutes.signIn;
       }
 
-      // reload user
       user.reload();
 
-      // ---------------------
-      // CASE 2: User SUDAH login tetapi BELUM verified
-      // ---------------------
       if (!user.emailVerified && loc != AppRoutes.emailVerification) {
         return AppRoutes.emailVerification;
       }
 
-      // ---------------------
-      // CASE 3: Verified user → bebas
-      // ---------------------
       return null;
     },
 
     routes: [
-
-      // ============================================================
       // ONBOARDING
-      // ============================================================
-      GoRoute(
-        path: AppRoutes.splash,
-        builder: (_, __) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.welcome,
-        builder: (_, __) => const WelcomeScreen(),
-      ),
+      GoRoute(path: AppRoutes.splash, builder: (_, __) => const SplashScreen()),
+      GoRoute(path: AppRoutes.welcome, builder: (_, __) => const WelcomeScreen()),
 
-      // ============================================================
       // AUTH
-      // ============================================================
-      GoRoute(
-        path: AppRoutes.signIn,
-        builder: (_, __) => const SignInScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.signUp,
-        builder: (_, __) => const SignUpScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.emailVerification,
-        builder: (_, __) => const EmailVerificationScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.identitas,
-        builder: (_, __) => const IdentitasScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.kontak,
-        builder: (_, __) => const KontakScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.berhasil,
-        builder: (_, __) => const BerhasilScreen(),
-      ),
+      GoRoute(path: AppRoutes.signIn, builder: (_, __) => const SignInScreen()),
+      GoRoute(path: AppRoutes.signUp, builder: (_, __) => const SignUpScreen()),
+      GoRoute(path: AppRoutes.emailVerification, builder: (_, __) => const EmailVerificationScreen()),
+      GoRoute(path: AppRoutes.identitas, builder: (_, __) => const IdentitasScreen()),
+      GoRoute(path: AppRoutes.kontak, builder: (_, __) => const KontakScreen()),
+      GoRoute(path: AppRoutes.berhasil, builder: (_, __) => const BerhasilScreen()),
 
-      // ============================================================
       // MAIN NAVIGATION
-      // ============================================================
       GoRoute(
         path: AppRoutes.mainNav,
         builder: (_, state) {
@@ -170,24 +129,10 @@ GoRouter createRouter() {
         },
       ),
 
-      GoRoute(
-        path: AppRoutes.notif,
-        builder: (_, __) => const NotificationScreen(),
-      ),
+      GoRoute(path: AppRoutes.filter, builder: (_, __) => const FilterScreen()),
+      GoRoute(path: AppRoutes.addLaporan, builder: (_, __) => const AddLaporanScreen()),
 
-      GoRoute(
-        path: AppRoutes.filter,
-        builder: (_, __) => const FilterScreen(),
-      ),
-
-      GoRoute(
-        path: AppRoutes.addLaporan,
-        builder: (_, __) => const AddLaporanScreen(),
-      ),
-
-      // ============================================================
       // DETAIL — PELAPOR
-      // ============================================================
       GoRoute(
         path: AppRoutes.detailPelapor,
         builder: (_, state) {
@@ -199,18 +144,18 @@ GoRouter createRouter() {
             images: List<String>.from(data["images"]),
             title: data["title"],
             reporterName: data["reporterName"],
+            takerName: data["takerName"] ?? "-",   // 🟢 penting
             dateFound: data["dateFound"],
             locationFound: data["locationFound"],
             category: data["category"],
             description: data["description"],
             status: data["status"],
+            dokumentasi: List<String>.from(data["dokumentasi"] ?? []),
           );
         },
       ),
 
-      // ============================================================
       // DETAIL — UMUM
-      // ============================================================
       GoRoute(
         path: AppRoutes.detailUmum,
         builder: (_, state) {
@@ -254,7 +199,7 @@ GoRouter createRouter() {
       ),
 
       // ============================================================
-      // EDIT DOKUMENTASI
+      // EDIT DOKUMENTASI — FIXED 🟢
       // ============================================================
       GoRoute(
         path: AppRoutes.editDokumentasi,
@@ -262,57 +207,51 @@ GoRouter createRouter() {
           final data = state.extra as Map<String, dynamic>?;
 
           return EditDokumentasiScreen(
-            laporanId: data?["laporanId"],
+            laporanId: data?["laporanId"] ?? "",
             title: data?["title"] ?? "-",
+            existingDokumentasi: List<String>.from(data?["existingDokumentasi"] ?? []),
           );
         },
       ),
 
-      // DETAIL DOKUMENTASI
+      // ============================================================
+// LIHAT DOKUMENTASI — FIXED & COMPLETE
+// ============================================================
       GoRoute(
         path: "/dokumentasi",
         builder: (_, state) {
           final data = state.extra as Map<String, dynamic>;
+
           return LaporanDokumentasiScreen(
+            laporanId: data["laporanId"] ?? "",
+            title: data["title"] ?? "-",
+
+            // 🟢 Detail tambahan (WAJIB dikirim, karena required)
+            reporter: data["reporter"] ?? "-",
+            taker: data["taker"] ?? "-",
+            tanggal: data["tanggal"] ?? "-",
+            lokasi: data["lokasi"] ?? "-",
+            kategori: data["kategori"] ?? "-",
+            deskripsi: data["deskripsi"] ?? "-",
+
+            // 🟢 List dokumentasi
             dokumentasi: List<String>.from(data["images"] ?? []),
-            title: data["title"] ?? "",
           );
         },
       ),
 
-      // ============================================================
       // PROFILE
-      // ============================================================
-      GoRoute(
-        path: AppRoutes.profile,
-        builder: (_, __) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.editProfile,
-        builder: (_, __) => const EditProfileScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.accountSettings,
-        builder: (_, __) => const AccountSettingsScreen(),
-      ),
+      GoRoute(path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: AppRoutes.editProfile, builder: (_, __) => const EditProfileScreen()),
+      GoRoute(path: AppRoutes.accountSettings, builder: (_, __) => const AccountSettingsScreen()),
 
-      // ============================================================
       // REPORT HISTORY
-      // ============================================================
-      GoRoute(
-        path: AppRoutes.reportHistory,
-        builder: (_, __) => const ReportHistoryScreen(),
-      ),
+      GoRoute(path: AppRoutes.reportHistory, builder: (_, __) => const ReportHistoryScreen()),
     ],
 
-    // ============================================================
-    // 404 PAGE
-    // ============================================================
     errorBuilder: (context, state) {
       return Scaffold(
-        body: Center(
-          child: Text("404 — Page Not Found\n${state.uri}"),
-        ),
+        body: Center(child: Text("404 — Page Not Found\n${state.uri}")),
       );
     },
   );

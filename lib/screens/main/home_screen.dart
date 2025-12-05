@@ -47,14 +47,6 @@ class HomeScreen extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => context.go(AppRoutes.notif),
-                      child: const Icon(
-                        Icons.notifications_none,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
                   ],
                 ),
               ),

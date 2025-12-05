@@ -61,7 +61,7 @@ class StorageService {
   }
 
   // ============================================================
-  // 3. UPLOAD FOTO DOKUMENTASI
+  // 3. UPLOAD SATU FOTO DOKUMENTASI
   // ============================================================
   Future<String> uploadDokumentasi(File file, {String? laporanId}) async {
     try {
@@ -80,15 +80,34 @@ class StorageService {
     }
   }
 
+  // ============================================================
+  // 🆕 4. UPLOAD MULTIPLE DOKUMENTASI (BARU)
+  // ============================================================
+  Future<List<String>> uploadMultipleDokumentasi({
+    required String laporanId,
+    required List<XFile> files,
+  }) async {
+    final urls = <String>[];
+
+    for (final file in files) {
+      final url = await uploadDokumentasi(File(file.path), laporanId: laporanId);
+      urls.add(url);
+    }
+
+    return urls;
+  }
+
+  // ============================================================
+  // UPDATE PROFILE PHOTO
+  // ============================================================
   Future<String> uploadProfilePhoto(String userId, File file) async {
     final ref = FirebaseStorage.instance.ref("profile_photos/$userId.jpg");
     await ref.putFile(file);
     return await ref.getDownloadURL();
   }
 
-
   // ============================================================
-  // 4. UPLOAD KARTU IDENTITAS (KTM / KTP)
+  // 5. UPLOAD KARTU IDENTITAS (KTM/KTP)
   // ============================================================
   Future<String> uploadKartuIdentitas({
     required String userId,
@@ -115,6 +134,18 @@ class StorageService {
       await ref.delete();
     } catch (e) {
       print("Gagal hapus file: $e");
+    }
+  }
+
+  // ============================================================
+  // 🆕 OPTIONAL: DELETE FOTO DOKUMENTASI (BARU)
+  // ============================================================
+  Future<void> deleteDokumentasi(String url) async {
+    try {
+      final ref = _storage.refFromURL(url);
+      await ref.delete();
+    } catch (e) {
+      print("Gagal hapus dokumentasi: $e");
     }
   }
 }

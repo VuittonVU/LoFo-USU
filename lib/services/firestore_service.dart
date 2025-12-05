@@ -27,6 +27,7 @@ class FirestoreService {
     await doc.set({
       "id": doc.id,
       "id_pengguna": userId,
+      "id_pengklaim": null,
       "nama_pelapor": namaPelapor,
       "nama_barang": namaBarang,
       "tanggal": tanggal,
@@ -35,8 +36,14 @@ class FirestoreService {
       "kategori": kategori,
       "lokasi": lokasi,
       "status_laporan": "Aktif",
+
+      // dokumentasi kosong di awal
       "dokumentasi": [],
+      // detail dokumentasi kosong
+      "detail": null,
+
       "createdAt": FieldValue.serverTimestamp(),
+      "updatedAt": FieldValue.serverTimestamp(),
     });
   }
 
@@ -76,6 +83,9 @@ class FirestoreService {
     });
   }
 
+  // ============================================================
+  // UPDATE FOTO PROFIL USER (helper, bukan laporan)
+  // ============================================================
   Future<void> updateProfilePhoto(String userId, String url) async {
     await FirebaseFirestore.instance.collection("users").doc(userId).update({
       "fotoProfil": url,
@@ -96,10 +106,10 @@ class FirestoreService {
   }
 
   // ============================================================
-  // EDIT DOKUMENTASI (BUKTI SERAH TERIMA)
+  // EDIT DOKUMENTASI (BUKTI SERAH TERIMA) – versi simple
+  // (Masih dipakai? kalau iya, ini hanya update list dokumentasi)
   // ============================================================
-  Future<void> updateFotoBarang(
-      String id, List<String> fotoBarang) async {
+  Future<void> updateFotoBarang(String id, List<String> fotoBarang) async {
     await laporanRef.doc(id).update({
       "dokumentasi": fotoBarang,
       "updatedAt": Timestamp.now(),
@@ -132,7 +142,8 @@ class FirestoreService {
   }
 
   // ============================================================
-  // KONFIRMASI SELESAI (PELAPOR)
+  // KONFIRMASI SELESAI (PELAPOR) – versi lama (tanpa detail)
+  // Masih boleh dipakai kalau cuma mau set status tanpa dokumentasi
   // ============================================================
   Future<void> selesaiLaporan(String id) async {
     await laporanRef.doc(id).update({
@@ -141,6 +152,9 @@ class FirestoreService {
     });
   }
 
+  // ============================================================
+  // KONFIRMASI SELESAI + SIMPAN DOKUMENTASI (dipakai EditDokumentasiScreen)
+  // ============================================================
   Future<void> confirmSelesai({
     required String laporanId,
     required List<String> dokumentasiUrls,

@@ -95,7 +95,7 @@ class _KontakScreenState extends State<KontakScreen> {
       validPhone && validEmail && validIG && validWA;
 
   // ============================================================
-  // SAVE CONTACT + FOTO
+  // SAVE CONTACT + PHOTO
   // ============================================================
   Future<void> save() async {
     if (loading || !formValid) return;
@@ -110,7 +110,7 @@ class _KontakScreenState extends State<KontakScreen> {
     String uploadedPhoto = photoUrl;
 
     try {
-      // Upload foto profil baru
+      // Upload photo
       if (newPhoto != null) {
         final ref = FirebaseStorage.instance
             .ref("profile_photos/${user.uid}.jpg");
@@ -118,7 +118,7 @@ class _KontakScreenState extends State<KontakScreen> {
         await ref.putFile(newPhoto!);
         uploadedPhoto = await ref.getDownloadURL();
 
-        // Update ke FirebaseAuth
+        // Update FirebaseAuth
         await user.updatePhotoURL(uploadedPhoto);
       }
 
@@ -162,7 +162,7 @@ class _KontakScreenState extends State<KontakScreen> {
                 const SizedBox(height: 40),
 
                 // ============================================================
-                // FOTO PROFIL
+                // PROFILE PHOTO
                 // ============================================================
                 Center(
                   child: Stack(
@@ -179,14 +179,10 @@ class _KontakScreenState extends State<KontakScreen> {
                           child: newPhoto != null
                               ? Image.file(newPhoto!, fit: BoxFit.cover)
                               : (photoUrl.isNotEmpty
-                              ? Image.network(photoUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  Image.asset("assets/images/pp.png"))
+                              ? Image.network(photoUrl, fit: BoxFit.cover)
                               : Image.asset("assets/images/pp.png")),
                         ),
                       ),
-
                       Positioned(
                         bottom: 4,
                         right: 4,
@@ -210,12 +206,11 @@ class _KontakScreenState extends State<KontakScreen> {
                 const SizedBox(height: 30),
 
                 // ============================================================
-                // FORM
+                // CONTACT FORM
                 // ============================================================
-                LofoTextField(
-                  label: "Nomor Telepon",
-                  hint: "0812xxxxxxx",
-                  icon: Icons.phone,
+                _contactItem(
+                  iconPath: "assets/icons/phone.png",
+                  label: "Nomor Telepon:",
                   controller: telpCtrl,
                 ),
                 if (!validPhone && telpCtrl.text.isNotEmpty)
@@ -223,10 +218,9 @@ class _KontakScreenState extends State<KontakScreen> {
                       style: TextStyle(color: Colors.red, fontSize: 12)),
                 const SizedBox(height: 18),
 
-                LofoTextField(
-                  label: "Instagram",
-                  hint: "@username",
-                  icon: Icons.camera_alt,
+                _contactItem(
+                  iconPath: "assets/icons/instagram.png",
+                  label: "Instagram:",
                   controller: igCtrl,
                 ),
                 if (!validIG && igCtrl.text.isNotEmpty)
@@ -234,10 +228,9 @@ class _KontakScreenState extends State<KontakScreen> {
                       style: TextStyle(color: Colors.red, fontSize: 12)),
                 const SizedBox(height: 18),
 
-                LofoTextField(
-                  label: "WhatsApp",
-                  hint: "0812xxxxxxx",
-                  icon: Icons.chat,
+                _contactItem(
+                  iconPath: "assets/icons/whatsapp.png",
+                  label: "WhatsApp:",
                   controller: waCtrl,
                 ),
                 if (!validWA && waCtrl.text.isNotEmpty)
@@ -245,10 +238,9 @@ class _KontakScreenState extends State<KontakScreen> {
                       style: TextStyle(color: Colors.red, fontSize: 12)),
                 const SizedBox(height: 18),
 
-                LofoTextField(
-                  label: "Email Kontak",
-                  hint: "example@gmail.com",
-                  icon: Icons.mail,
+                _contactItem(
+                  iconPath: "assets/icons/mail.png",
+                  label: "Email Kontak:",
                   controller: emailCtrl,
                 ),
                 if (!validEmail && emailCtrl.text.isNotEmpty)
@@ -275,6 +267,55 @@ class _KontakScreenState extends State<KontakScreen> {
                 child: CircularProgressIndicator(color: Colors.white),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // CONTACT ITEM WIDGET
+  // ============================================================
+  Widget _contactItem({
+    required String iconPath,
+    required String label,
+    required TextEditingController controller,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF4CAF50)),
+      ),
+      child: Row(
+        children: [
+          Image.asset(iconPath, width: 28),
+          const SizedBox(width: 10),
+
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          Expanded(
+            flex: 2,
+            child: TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                suffixIcon: const Icon(Icons.edit,
+                    size: 18, color: Color(0xFF4CAF50)),
+                contentPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFF4CAF50)),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

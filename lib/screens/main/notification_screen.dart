@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/top_bar_backbtn.dart';
 
 class NotificationScreen extends StatelessWidget {
-  const NotificationScreen({super.key});
+  final Map<String, dynamic>? notificationData;
+
+  const NotificationScreen({super.key, this.notificationData});
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +44,12 @@ class NotificationScreen extends StatelessWidget {
                   _buildDateBubble("03/10/2025"),
                   const SizedBox(height: 15),
 
-                  _buildNotificationCard(
-                    "Eka Wiranti mengaku sebagai pemilik dompet Fossil coklat dan akan segera menghubungi Anda.",
-                    "15:40",
-                  ),
-
+                  // Build notification card with data passed
+                  if (notificationData != null)
+                    _buildNotificationCard(
+                      notificationData?['title'] ?? 'No Title',
+                      notificationData?['time'] ?? '00:00',
+                    ),
                   const SizedBox(height: 35),
                   _buildDateBubble("01/10/2025"),
                   const SizedBox(height: 15),

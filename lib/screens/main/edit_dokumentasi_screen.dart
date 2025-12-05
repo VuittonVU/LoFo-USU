@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../services/firestore_service.dart';
 import '../../services/storage_service.dart';
@@ -47,7 +47,7 @@ class _EditDokumentasiScreenState extends State<EditDokumentasiScreen> {
     namaCtrl.text = widget.title;
     lokasiCtrl.text = widget.initialLocation;
     kategoriCtrl.text = widget.initialCategory;
-    tanggalCtrl.text = _today(); // auto fill tanggal hari ini
+    tanggalCtrl.text = _today(); // Auto-fill today's date
   }
 
   String _today() {
@@ -146,16 +146,16 @@ class _EditDokumentasiScreenState extends State<EditDokumentasiScreen> {
     List<String> urls = [];
 
     try {
-      // Upload foto baru
+      // Upload new images
       for (var img in selectedImages) {
         final url = await StorageService.instance.uploadDokumentasi(img);
         urls.add(url);
       }
 
-      // Tambahkan foto lama
+      // Add existing images
       urls.addAll(widget.existingDokumentasi);
 
-      // Update Firestore → set selesai + dokumentasi
+      // Update Firestore → set selesai + documentation
       await FirestoreService.instance.confirmSelesai(
         laporanId: widget.laporanId,
         dokumentasiUrls: urls,
@@ -203,10 +203,7 @@ class _EditDokumentasiScreenState extends State<EditDokumentasiScreen> {
                 children: [
 
                   // IMAGE PREVIEW
-                  GestureDetector(
-                    onTap: pickImage,
-                    child: _imagePreview(),
-                  ),
+                  _imageSection(),
 
                   const SizedBox(height: 20),
 
@@ -282,46 +279,129 @@ class _EditDokumentasiScreenState extends State<EditDokumentasiScreen> {
   }
 
   // ===================================================
-  // UI COMPONENTS
+  // IMAGE SECTION — Can Delete & Add Photos
   // ===================================================
+  Widget _imageSection() {
+    return Column(
+      children: [
+        // OLD PHOTO
+        if (widget.existingDokumentasi.isNotEmpty)
+          ...List.generate(widget.existingDokumentasi.length, (i) {
+            return Stack(
+              children: [
+                GestureDetector(
+                  onTap: () => _openFullImage(widget.existingDokumentasi[i]),
+                  child: _imageBox(widget.existingDokumentasi[i]),
+                ),
+                _deleteBtn(() => _deleteOldImage(i)),
+              ],
+            );
+          }),
 
-  Widget _imagePreview() {
-    if (selectedImages.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.file(
-          selectedImages.last,
-          height: 180,
-          width: double.infinity,
-          fit: BoxFit.cover,
+        // NEW PHOTO
+        ...List.generate(selectedImages.length, (i) {
+          return Stack(
+            children: [
+              GestureDetector(
+                onTap: () => _openFullImage(selectedImages[i].path),
+                child: _imageBox(selectedImages[i].path),
+              ),
+              _deleteBtn(() => _deleteNewImage(i)),
+            ],
+          );
+        }),
+
+        // ADD PHOTO BUTTON
+        GestureDetector(
+          onTap: pickImage,
+          child: Container(
+            height: 160,
+            width: double.infinity,
+            margin: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Center(
+              child: Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+            ),
+          ),
         ),
-      );
-    }
+      ],
+    );
+  }
 
-    if (widget.existingDokumentasi.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.network(
-          widget.existingDokumentasi.first,
-          height: 180,
-          width: double.infinity,
-          fit: BoxFit.cover,
+  // DELETE BUTTON FOR OLD PHOTO
+  void _deleteOldImage(int index) {
+    setState(() {
+      widget.existingDokumentasi.removeAt(index);
+    });
+  }
+
+  // DELETE BUTTON FOR NEW PHOTO
+  void _deleteNewImage(int index) {
+    setState(() {
+      selectedImages.removeAt(index);
+    });
+  }
+
+  Widget _deleteBtn(VoidCallback onTap) {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(40),
+          ),
+          child: const Icon(Icons.close, color: Colors.white),
         ),
-      );
-    }
-
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: const Center(
-        child: Icon(Icons.add_photo_alternate, size: 60, color: Colors.grey),
       ),
     );
   }
 
+  // IMAGE DISPLAY BOX
+  Widget _imageBox(String path) {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: path.startsWith("http")
+            ? Image.network(path, fit: BoxFit.cover)
+            : Image.file(File(path), fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  // FULLSCREEN IMAGE
+  void _openFullImage(String url) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) {
+        return GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            color: Colors.black,
+            child: Center(
+              child: url.startsWith("http")
+                  ? Image.network(url)
+                  : Image.file(File(url)),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ===================================================
+  // FORM COMPONENTS
+  // ===================================================
   Widget _formSection(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(16),

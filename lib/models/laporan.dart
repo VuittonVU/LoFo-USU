@@ -10,8 +10,11 @@ class Laporan {
   final String lokasi;
   final String deskripsi;
   final String tanggal;
+
   final List<String> fotoBarang;
+  final List<String> dokumentasi;   // <-- ADD
   final String statusLaporan;
+
   final Timestamp createdAt;
   final Timestamp updatedAt;
 
@@ -26,6 +29,7 @@ class Laporan {
     required this.deskripsi,
     required this.tanggal,
     required this.fotoBarang,
+    required this.dokumentasi,   // <-- ADD
     required this.statusLaporan,
     required this.createdAt,
     required this.updatedAt,
@@ -33,6 +37,7 @@ class Laporan {
 
   factory Laporan.fromDocument(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
     return Laporan(
       id: doc.id,
       idPengguna: data["id_pengguna"],
@@ -43,10 +48,13 @@ class Laporan {
       lokasi: data["lokasi"],
       deskripsi: data["deskripsi"],
       tanggal: data["tanggal"],
+
       fotoBarang: List<String>.from(data["foto_barang"] ?? []),
+      dokumentasi: List<String>.from(data["dokumentasi"] ?? []), // <-- ADD
+
       statusLaporan: data["status_laporan"],
-      createdAt: data["createdAt"],
-      updatedAt: data["updatedAt"],
+      createdAt: data["createdAt"] ?? Timestamp.now(),
+      updatedAt: data["updatedAt"] ?? Timestamp.now(),
     );
   }
 
@@ -61,6 +69,7 @@ class Laporan {
       "deskripsi": deskripsi,
       "tanggal": tanggal,
       "foto_barang": fotoBarang,
+      "dokumentasi": dokumentasi, // <-- ADD
       "status_laporan": statusLaporan,
       "createdAt": createdAt,
       "updatedAt": updatedAt,
