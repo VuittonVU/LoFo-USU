@@ -1,4 +1,4 @@
-# lofo
+# LoFo USU
 
 A new Flutter project.
 
