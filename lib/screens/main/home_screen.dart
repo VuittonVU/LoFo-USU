@@ -80,7 +80,10 @@ class HomeScreen extends StatelessWidget {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(top: 20, bottom: 100),
+                  padding: EdgeInsets.only(
+                    top: 20,
+                    bottom: MediaQuery.of(context).padding.bottom + 90,
+                  ),
                   itemCount: items.length,
                   itemBuilder: (_, index) {
                     final item = items[index];

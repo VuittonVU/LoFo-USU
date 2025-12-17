@@ -194,109 +194,115 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildBody() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
+      child:
+      Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
 
-          // FOTO PROFIL
-          Center(
-            child: GestureDetector(
-              onTap: pickPhoto,
-              child: Stack(
-                children: [
-                  Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade300, width: 5),
-                    ),
-                    child: ClipOval(
-                      child: newPhoto != null
-                          ? Image.file(newPhoto!, fit: BoxFit.cover)
-                          : (photoUrl.isNotEmpty
-                          ? Image.network(photoUrl, fit: BoxFit.cover)
-                          : Image.asset("assets/images/pp.png")),
-                    ),
-                  ),
-
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
+            // FOTO PROFIL
+            Center(
+              child: GestureDetector(
+                onTap: pickPhoto,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 150,
+                      height: 150,
                       decoration: BoxDecoration(
-                        color: const Color(0xff4CAF50),
-                        borderRadius: BorderRadius.circular(10),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.shade300, width: 5),
                       ),
-                      child: const Icon(Icons.edit,
-                          size: 20, color: Colors.white),
+                      child: ClipOval(
+                        child: newPhoto != null
+                            ? Image.file(newPhoto!, fit: BoxFit.cover)
+                            : (photoUrl.isNotEmpty
+                            ? Image.network(photoUrl, fit: BoxFit.cover)
+                            : Image.asset("assets/images/pp.png")),
+                      ),
                     ),
-                  ),
-                ],
+
+                    Positioned(
+                      bottom: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xff4CAF50),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.edit,
+                            size: 20, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 25),
+            const SizedBox(height: 25),
 
-          // SECTION 1
-          _sectionForm(children: [
-            _label("Nama"),
-            _editField(nameCtrl),
+            // SECTION 1
+            _sectionForm(children: [
+              _label("Nama"),
+              _editField(nameCtrl),
 
-            _label("Prodi"),
-            _editField(majorCtrl),
+              _label("Prodi"),
+              _editField(majorCtrl),
 
-            _label("Fakultas"),
-            _editField(facultyCtrl),
+              _label("Fakultas"),
+              _editField(facultyCtrl),
 
-            _label("NIM"),
-            _editField(nimCtrl),
-          ]),
+              _label("NIM"),
+              _editField(nimCtrl),
+            ]),
 
-          const SizedBox(height: 25),
+            const SizedBox(height: 25),
 
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Kontak:",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey.shade900,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Kontak:",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade900,
+                ),
               ),
             ),
-          ),
 
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-          _contactItem(
-            iconPath: "assets/icons/phone.png",
-            label: "Nomor Telepon:",
-            controller: phoneCtrl,
-          ),
+            _contactItem(
+              iconPath: "assets/icons/phone.png",
+              label: "Nomor Telepon:",
+              controller: phoneCtrl,
+            ),
 
-          _contactItem(
-            iconPath: "assets/icons/instagram.png",
-            label: "Instagram:",
-            controller: igCtrl,
-          ),
+            _contactItem(
+              iconPath: "assets/icons/instagram.png",
+              label: "Instagram:",
+              controller: igCtrl,
+            ),
 
-          _contactItem(
-            iconPath: "assets/icons/whatsapp.png",
-            label: "Whatsapp:",
-            controller: waCtrl,
-          ),
+            _contactItem(
+              iconPath: "assets/icons/whatsapp.png",
+              label: "Whatsapp:",
+              controller: waCtrl,
+            ),
 
-          _contactItem(
-            iconPath: "assets/icons/mail.png",
-            label: "Email:",
-            controller: emailCtrl,
-          ),
+            _contactItem(
+              iconPath: "assets/icons/mail.png",
+              label: "Email:",
+              controller: emailCtrl,
+            ),
 
-          const SizedBox(height: 40),
-        ],
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../config/routes.dart';
 import '../../widgets/top_bar_backbtn.dart';
 import '../../widgets/item_status_badge.dart';
+import '../../services/firestore_service.dart';
 
 class LaporanPelaporScreen extends StatefulWidget {
   final String laporanId;
@@ -44,34 +45,37 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
   bool get isCreator =>
       FirebaseAuth.instance.currentUser?.uid == widget.ownerId;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE3F3E3),
-      body: Column(
-        children: [
-          TopBarBackBtn(
-            title: "LoFo USU",
-            onBack: () => context.go("/main?startIndex=0"),
+  // ============================================================
+  // DELETE CONFIRMATION
+  // ============================================================
+  void _confirmDelete() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Hapus Laporan"),
+        content: const Text(
+          "Apakah kamu yakin ingin menghapus laporan ini? "
+              "Tindakan ini tidak bisa dibatalkan.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
           ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildMainCard(),
-                  const SizedBox(height: 20),
-                  _buildDetailCard(),
-                  const SizedBox(height: 20),
-                  _buildDescriptionCard(),
-                  const SizedBox(height: 20),
-                  _buildStatusInfo(),
-                  const SizedBox(height: 24),
+              await FirestoreService.instance
+                  .deleteLaporan(widget.laporanId);
 
-                  _buildActionButtons(),
-                ],
-              ),
+              if (mounted) {
+                context.go("/main?startIndex=0");
+              }
+            },
+            child: const Text(
+              "Hapus",
+              style: TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -79,12 +83,89 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE3F3E3),
+
+      // ============================================================
+      // BOTTOM ACTION (SEJALAN DENGAN LAPORAN UMUM)
+      // ============================================================
+      bottomNavigationBar: _bottomActionBar(),
+
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              TopBarBackBtn(
+                title: "LoFo USU",
+                onBack: () => context.go("/main?startIndex=0"),
+              ),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    MediaQuery.of(context).padding.bottom + 16,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildMainCard(),
+                      const SizedBox(height: 20),
+                      _buildDetailCard(),
+                      const SizedBox(height: 20),
+                      _buildDescriptionCard(),
+                      const SizedBox(height: 20),
+                      _buildStatusInfo(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // ============================================================
+          // DELETE ICON (KANAN ATAS)
+          // ============================================================
+          if (isCreator)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 5,
+              right: 12,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.delete,
+                  color: Color(0xFF4CAF50),
+                ),
+
+                onPressed: _confirmDelete,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   // ============================================================
-  // TOMBOL PALING BAWAH
+  // BOTTOM ACTION BAR
   // ============================================================
-  Widget _buildActionButtons() {
+  Widget _bottomActionBar() {
     if (!isCreator) return const SizedBox.shrink();
 
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: _buildActionButtons(),
+      ),
+    );
+  }
+
+  // ============================================================
+  // ACTION BUTTONS
+  // ============================================================
+  Widget _buildActionButtons() {
     // 🔵 STATUS = Aktif → Edit laporan
     if (widget.status == "Aktif") {
       return _btn("Edit Laporan", () {
@@ -100,7 +181,7 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
       });
     }
 
-    // 🟠 STATUS = Dalam Proses → buka Edit Dokumentasi
+    // 🟠 STATUS = Dalam Proses → konfirmasi / edit dokumentasi
     if (widget.status == "Dalam Proses") {
       return _btn("Konfirmasi Selesai", () {
         context.push(AppRoutes.editDokumentasi, extra: {
@@ -111,7 +192,7 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
       });
     }
 
-    // 🟢 STATUS = Selesai → lihat dokumentasi atau edit ulang
+    // 🟢 STATUS = Selesai
     return Column(
       children: [
         _btn("Lihat Dokumentasi", () {
@@ -124,7 +205,7 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
             "lokasi": widget.locationFound,
             "tanggal": widget.dateFound,
             "reporter": widget.reporterName,
-            "taker": widget.takerName, // kalau belum ada tambahkan ke constructor
+            "taker": widget.takerName,
           });
         }),
         const SizedBox(height: 10),
@@ -139,7 +220,6 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
     );
   }
 
-  // ============================================================
   Widget _btn(String text, VoidCallback onTap) {
     return SizedBox(
       width: double.infinity,
@@ -155,14 +235,17 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
         child: Text(
           text,
           style: const TextStyle(
-              fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
         ),
       ),
     );
   }
 
   // ============================================================
-  // UI UTAMA
+  // UI CONTENT
   // ============================================================
   Widget _buildMainCard() {
     return Container(
@@ -181,15 +264,20 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
                 child: Text(
                   widget.title,
                   style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.w700),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               ItemStatusBadge(status: widget.status),
             ],
           ),
+
           const SizedBox(height: 4),
-          Text("Pelapor: ${widget.reporterName}",
-              style: TextStyle(color: Colors.grey.shade700)),
+          Text(
+            "Pelapor: ${widget.reporterName}",
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
         ],
       ),
     );
@@ -214,8 +302,10 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
     return _whiteBox(
       Column(
         children: [
-          const Text("Detail",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const Text(
+            "Detail",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 12),
           _detailRow(Icons.calendar_today, "Tanggal ditemukan", widget.dateFound),
           const SizedBox(height: 10),
@@ -244,8 +334,10 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Deskripsi",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const Text(
+            "Deskripsi",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Text(
             widget.description,
@@ -291,7 +383,7 @@ class _LaporanPelaporScreenState extends State<LaporanPelaporScreen> {
         BoxShadow(
           color: Colors.black.withOpacity(0.08),
           blurRadius: 6,
-        )
+        ),
       ],
     );
   }

@@ -171,7 +171,9 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 100),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 100,
+                  ),
                   itemCount: filtered.length,
                   itemBuilder: (_, index) {
                     final item = filtered[index];

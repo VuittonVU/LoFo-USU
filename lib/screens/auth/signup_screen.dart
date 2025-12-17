@@ -95,98 +95,104 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return LofoScaffold(
       child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 60),
-            const Text(
-              "Daftar Akun Baru",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF2F9E44),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // =========================
-            // EMAIL
-            // =========================
-            LofoTextField(
-              label: "Email USU",
-              hint: "example@students.usu.ac.id",
-              icon: Icons.mail,
-              controller: emailCtrl,
-              showInternalLabel: true,
-            ),
-            if (!validEmail && emailCtrl.text.isNotEmpty)
-              _error("Gunakan email USU yang valid"),
-
-            const SizedBox(height: 20),
-
-            // =========================
-            // PASSWORD
-            // =========================
-            LofoTextField(
-              label: "Password",
-              hint: "Minimal 6 karakter",
-              icon: Icons.lock,
-              controller: passCtrl,
-              obscure: !showPass,
-              suffix: GestureDetector(
-                onTap: () => setState(() => showPass = !showPass),
-                child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
-              ),
-            ),
-            if (!validPass && passCtrl.text.isNotEmpty)
-              _error("Password minimal 6 karakter"),
-
-            const SizedBox(height: 20),
-
-            // =========================
-            // CONFIRM PASSWORD
-            // =========================
-            LofoTextField(
-              label: "Konfirmasi Password",
-              hint: "Ulangi password",
-              icon: Icons.lock_outline,
-              controller: confirmCtrl,
-              obscure: !showConfirmPass,
-              suffix: GestureDetector(
-                onTap: () =>
-                    setState(() => showConfirmPass = !showConfirmPass),
-                child: Icon(
-                    showConfirmPass ? Icons.visibility_off : Icons.visibility),
-              ),
-            ),
-            if (!validConfirm && confirmCtrl.text.isNotEmpty)
-              _error("Password tidak sama"),
-
-            const SizedBox(height: 40),
-
-            // =========================
-            // BUTTON SIGN UP
-            // =========================
-            PrimaryButton(
-              text: loading ? "Memproses..." : "Daftar",
-              onPressed: formValid && !loading ? _handleSignUp : null,
-            ),
-
-            const SizedBox(height: 20),
-
-            GestureDetector(
-              onTap: () => context.go(AppRoutes.signIn),
-              child: const Text(
-                "Sudah punya akun? Masuk",
+        child:
+        Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 60),
+              const Text(
+                "Daftar Akun Baru",
                 style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: Color(0xFF2F9E44),
-                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+
+              // =========================
+              // EMAIL
+              // =========================
+              LofoTextField(
+                label: "Email USU",
+                hint: "example@students.usu.ac.id",
+                icon: Icons.mail,
+                controller: emailCtrl,
+                showInternalLabel: true,
+              ),
+              if (!validEmail && emailCtrl.text.isNotEmpty)
+                _error("Gunakan email USU yang valid"),
+
+              const SizedBox(height: 20),
+
+              // =========================
+              // PASSWORD
+              // =========================
+              LofoTextField(
+                label: "Password",
+                hint: "Minimal 6 karakter",
+                icon: Icons.lock,
+                controller: passCtrl,
+                obscure: !showPass,
+                suffix: GestureDetector(
+                  onTap: () => setState(() => showPass = !showPass),
+                  child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+                ),
+              ),
+              if (!validPass && passCtrl.text.isNotEmpty)
+                _error("Password minimal 6 karakter"),
+
+              const SizedBox(height: 20),
+
+              // =========================
+              // CONFIRM PASSWORD
+              // =========================
+              LofoTextField(
+                label: "Konfirmasi Password",
+                hint: "Ulangi password",
+                icon: Icons.lock_outline,
+                controller: confirmCtrl,
+                obscure: !showConfirmPass,
+                suffix: GestureDetector(
+                  onTap: () =>
+                      setState(() => showConfirmPass = !showConfirmPass),
+                  child: Icon(
+                      showConfirmPass ? Icons.visibility_off : Icons.visibility),
+                ),
+              ),
+              if (!validConfirm && confirmCtrl.text.isNotEmpty)
+                _error("Password tidak sama"),
+
+              const SizedBox(height: 40),
+
+              // =========================
+              // BUTTON SIGN UP
+              // =========================
+              PrimaryButton(
+                text: loading ? "Memproses..." : "Daftar",
+                onPressed: formValid && !loading ? _handleSignUp : null,
+              ),
+
+              const SizedBox(height: 20),
+
+              GestureDetector(
+                onTap: () => context.go(AppRoutes.signIn),
+                child: const Text(
+                  "Sudah punya akun? Masuk",
+                  style: TextStyle(
+                    color: Color(0xFF2F9E44),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

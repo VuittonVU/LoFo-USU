@@ -5,7 +5,7 @@ import '../../widgets/navbar.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'profile_screen.dart';
-import 'report_history_screen.dart';   // <-- IMPORT HISTORY
+import 'report_history_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int startIndex;
@@ -14,11 +14,11 @@ class MainNavigationScreen extends StatefulWidget {
   final String? urutan;
 
   const MainNavigationScreen({
+    super.key,
     this.startIndex = 0,
     this.kategori,
     this.lokasi,
     this.urutan,
-    super.key,
   });
 
   @override
@@ -31,38 +31,40 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    index = widget.startIndex;
+    index = widget.startIndex.clamp(0, 4); // 🔥 biar aman
   }
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      HomeScreen(),                                                // 0
+    final List<Widget> screens = [
+      const HomeScreen(), // 0
 
-      SearchScreen(                                                // 1
+      SearchScreen(       // 1
         kategori: widget.kategori ?? "",
         lokasi: widget.lokasi ?? "",
         urutan: widget.urutan ?? "",
       ),
 
-      const SizedBox.shrink(),                                     // 2
+      const SizedBox.shrink(), // 2 (FAB)
 
-      const ReportHistoryScreen(),                                 // 3
+      const ReportHistoryScreen(), // 3
 
-      const ProfileScreen(),                                       // 4
+      const ProfileScreen(), // 4
     ];
 
     return Scaffold(
-      body: screens[index],
+      body: IndexedStack(        // 🔥 lebih aman dari List[index]
+        index: index,
+        children: screens,
+      ),
 
       bottomNavigationBar: MainNavigationBar(
         index: index,
         onTap: (i) {
           if (i == 2) {
-            context.go('/add-laporan'); // tombol ADD
+            context.go('/add-laporan');
             return;
           }
-
           setState(() => index = i);
         },
       ),

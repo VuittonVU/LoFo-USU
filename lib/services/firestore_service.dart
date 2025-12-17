@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/laporan.dart';
 
 class FirestoreService {
@@ -186,4 +187,54 @@ class FirestoreService {
       }).toList();
     });
   }
+
+  // ============================================================
+  // DELETE LAPORAN (PELAPOR)
+  // ============================================================
+  Future<void> deleteLaporan(String laporanId) async {
+    final docRef = laporanRef.doc(laporanId);
+
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) return;
+
+    final data = snapshot.data() as Map<String, dynamic>;
+
+    // ==========================================================
+    // HAPUS FOTO BARANG
+    // ==========================================================
+    final List<String> fotoBarang =
+    List<String>.from(data['foto_barang'] ?? []);
+
+    for (final url in fotoBarang) {
+      await _deleteFromStorage(url);
+    }
+
+    // ==========================================================
+    // HAPUS DOKUMENTASI (JIKA ADA)
+    // ==========================================================
+    final List<String> dokumentasi =
+    List<String>.from(data['dokumentasi'] ?? []);
+
+    for (final url in dokumentasi) {
+      await _deleteFromStorage(url);
+    }
+
+    // ==========================================================
+    // HAPUS DOKUMEN FIRESTORE
+    // ==========================================================
+    await docRef.delete();
+  }
+
+  // ============================================================
+  // HELPER: DELETE FILE DARI STORAGE (VIA URL)
+  // ============================================================
+  Future<void> _deleteFromStorage(String downloadUrl) async {
+    try {
+      final ref = FirebaseStorage.instance.refFromURL(downloadUrl);
+      await ref.delete();
+    } catch (_) {
+      // ignore error (file sudah terhapus / tidak ditemukan)
+    }
+  }
+
 }

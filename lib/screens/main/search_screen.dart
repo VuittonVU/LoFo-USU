@@ -191,7 +191,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 100),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom + 100,
+                  ),
                   itemCount: items.length,
                   itemBuilder: (_, i) {
                     final item = items[i];

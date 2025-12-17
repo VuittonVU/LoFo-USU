@@ -39,23 +39,35 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   int currentIndex = 0;
   bool loading = false;
 
+  // 🔑 STATE DINAMIS (INI KUNCI FIX)
+  String? statusLaporan;
+  String? klaimerId;
+
   String get currentUid => FirebaseAuth.instance.currentUser?.uid ?? "";
   bool get isCreator => currentUid == widget.ownerId;
-
-  String? klaimerId;
   bool get isClaimed => klaimerId != null;
   bool get isClaimer => klaimerId == currentUid;
+
+  String get currentStatus => statusLaporan ?? widget.status;
 
   @override
   void initState() {
     super.initState();
-    _fetchClaimer();
+    _fetchLaporanState();
   }
 
-  Future<void> _fetchClaimer() async {
-    final laporan = await FirestoreService.instance.getLaporanById(widget.laporanId);
+  // ============================================================
+  // FETCH STATE TERBARU DARI FIRESTORE
+  // ============================================================
+  Future<void> _fetchLaporanState() async {
+    final laporan =
+    await FirestoreService.instance.getLaporanById(widget.laporanId);
+
+    if (!mounted) return;
+
     setState(() {
       klaimerId = laporan.idPengklaim;
+      statusLaporan = laporan.statusLaporan;
     });
   }
 
@@ -64,7 +76,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF4EF),
 
-      // CUSTOM GREEN APPBAR WITH BACK BUTTON
+      // APPBAR
       appBar: AppBar(
         backgroundColor: const Color(0xFF4CAF50),
         elevation: 0,
@@ -80,7 +92,12 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
       ),
 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          MediaQuery.of(context).padding.bottom + 80,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -100,24 +117,14 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   }
 
   // ============================================================
-  // MAIN CARD (GAMBAR + JUDUL)
+  // MAIN CARD
   // ============================================================
   Widget _buildMainCard() {
     final images = widget.images;
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: _whiteDeco(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -154,7 +161,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
                   ),
                 ),
               ),
-              ItemStatusBadge(status: widget.status),
+              ItemStatusBadge(status: currentStatus),
             ],
           ),
 
@@ -169,7 +176,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   }
 
   // ============================================================
-  // IMAGE CAROUSEL WITH FULLSCREEN VIEW
+  // IMAGE CAROUSEL
   // ============================================================
   Widget _buildImageCarousel(List<String> images) {
     if (images.isEmpty) {
@@ -204,8 +211,6 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   }
 
   // ============================================================
-  // DETAIL CARD
-  // ============================================================
   Widget _buildDetailCard() {
     return _whiteBox(
       Column(
@@ -237,8 +242,6 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   }
 
   // ============================================================
-  // DESKRIPSI — FULL WIDTH & JUSTIFY
-  // ============================================================
   Widget _buildDescriptionCard() {
     return _whiteBox(
       Column(
@@ -268,17 +271,15 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     String msg;
     Color color;
 
-    switch (widget.status) {
+    switch (currentStatus) {
       case "Aktif":
         msg = "Barang ini menunggu pemilik yang sah mengklaim.";
         color = Colors.green;
         break;
-
       case "Dalam Proses":
         msg = "Barang sedang dalam proses verifikasi.";
         color = Colors.orange;
         break;
-
       default:
         msg = "Barang sudah selesai diproses.";
         color = Colors.teal;
@@ -296,11 +297,11 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   }
 
   // ============================================================
-  // FIRESTORE ACTIONS
+  // BOTTOM ACTION
   // ============================================================
   Widget _bottomAction() {
     if (isCreator) return const SizedBox.shrink();
-    if (widget.status == "Selesai") return const SizedBox.shrink();
+    if (currentStatus == "Selesai") return const SizedBox.shrink();
 
     if (isClaimer) {
       return _button(
@@ -310,7 +311,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
       );
     }
 
-    if (widget.status == "Aktif" && !isClaimed) {
+    if (currentStatus == "Aktif" && !isClaimed) {
       return _button(
         label: "Ini milik saya",
         color: const Color(0xFF4CAF50),
@@ -326,14 +327,21 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
 
     setState(() => loading = true);
 
-    await FirestoreService.instance.claimLaporan(
-      laporanId: widget.laporanId,
-      claimantId: currentUid,
-    );
+    try {
+      await FirestoreService.instance.claimLaporan(
+        laporanId: widget.laporanId,
+        claimantId: currentUid,
+      );
 
-    if (mounted) {
-      await _fetchClaimer();
-      setState(() => loading = false);
+      await _fetchLaporanState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal klaim laporan: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -342,16 +350,20 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
 
     setState(() => loading = true);
 
-    await FirestoreService.instance.batalkanKlaim(widget.laporanId);
-
-    if (mounted) {
-      await _fetchClaimer();
-      setState(() => loading = false);
+    try {
+      await FirestoreService.instance.batalkanKlaim(widget.laporanId);
+      await _fetchLaporanState();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Gagal membatalkan klaim: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
 
-  // ============================================================
-  // BUTTON WIDGET
   // ============================================================
   Widget _button({
     required String label,
@@ -365,7 +377,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: onTap,
+            onPressed: loading ? null : onTap,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: color,
@@ -373,7 +385,17 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: Text(
+            child: loading
+                ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor:
+                AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+                : Text(
               label,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
@@ -386,28 +408,31 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     );
   }
 
-  // ============================================================
   Widget _whiteBox(Widget child) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      decoration: _whiteDeco(),
       child: child,
+    );
+  }
+
+  BoxDecoration _whiteDeco() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
     );
   }
 }
 
 // ============================================================
-// FULL IMAGE VIEW — ZOOMABLE + BACK BUTTON
+// FULL IMAGE VIEW
 // ============================================================
 class FullImageView extends StatelessWidget {
   final String imageUrl;
@@ -424,7 +449,6 @@ class FullImageView extends StatelessWidget {
               child: Image.network(imageUrl),
             ),
           ),
-
           Positioned(
             top: 40,
             left: 20,

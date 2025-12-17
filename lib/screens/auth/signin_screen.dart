@@ -76,71 +76,77 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return LofoScaffold(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Center(
-            child: Text(
-              "Halo, sobat USU!",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF2F9E44),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Center(child: Image.asset("assets/logo.png", height: 250)),
-
-          const SizedBox(height: 32),
-
-          LofoTextField(
-            label: "Email USU",
-            hint: "Masukkan email USU",
-            icon: Icons.mail,
-            controller: emailCtrl,
-            showInternalLabel: true,
-          ),
-
-          const SizedBox(height: 15),
-
-          LofoTextField(
-            label: "Password",
-            hint: "Masukkan password",
-            icon: Icons.lock,
-            controller: passCtrl,
-            obscure: !showPass,
-            showInternalLabel: true,
-            suffix: GestureDetector(
-              onTap: () => setState(() => showPass = !showPass),
-              child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
-            ),
-          ),
-
-          const SizedBox(height: 40),
-
-          PrimaryButton(
-            text: loading ? "Memproses..." : "Masuk",
-            onPressed: loading ? null : _handleLogin,
-          ),
-
-          const SizedBox(height: 16),
-
-          Center(
-            child: GestureDetector(
-              onTap: () => context.go(AppRoutes.signUp),
-              child: const Text(
-                "Belum punya akun? Daftar",
+      child:
+      Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                "Halo, sobat USU!",
                 style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
                   color: Color(0xFF2F9E44),
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 16),
+
+            Center(child: Image.asset("assets/logo.png", height: 250)),
+
+            const SizedBox(height: 32),
+
+            LofoTextField(
+              label: "Email USU",
+              hint: "Masukkan email USU",
+              icon: Icons.mail,
+              controller: emailCtrl,
+              showInternalLabel: true,
+            ),
+
+            const SizedBox(height: 15),
+
+            LofoTextField(
+              label: "Password",
+              hint: "Masukkan password",
+              icon: Icons.lock,
+              controller: passCtrl,
+              obscure: !showPass,
+              showInternalLabel: true,
+              suffix: GestureDetector(
+                onTap: () => setState(() => showPass = !showPass),
+                child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            PrimaryButton(
+              text: loading ? "Memproses..." : "Masuk",
+              onPressed: loading ? null : _handleLogin,
+            ),
+
+            const SizedBox(height: 16),
+
+            Center(
+              child: GestureDetector(
+                onTap: () => context.go(AppRoutes.signUp),
+                child: const Text(
+                  "Belum punya akun? Daftar",
+                  style: TextStyle(
+                    color: Color(0xFF2F9E44),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
