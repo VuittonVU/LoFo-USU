@@ -31,7 +31,7 @@ Setiap laporan barang dilengkapi informasi detail (foto barang, nama barang, nam
 Pengguna dapat mencari laporan berdasarkan kata kunci/keyword atau kategori, misalnya dokumen, elektronik, aksesoris, dan sebagainya. Hasil pencarian bisa difilter juga berdasarkan lokasi dan kategori agar lebih relevan.
 
 ### Status Laporan
-Setiap laporan dapat diberi status, seperti “Sedang Dicari”, “Menunggu Konfirmasi”, atau “Selesai”. Hal ini memudahkan pengguna mengetahui perkembangan suatu laporan.
+Setiap laporan dapat diberi status, seperti “Aktif”, “Dalam Proses”, atau “Selesai”. Hal ini memudahkan pengguna mengetahui perkembangan suatu laporan.
 
 ### Riwayat Laporan
 Pengguna dapat melihat riwayat laporan yang pernah dibuat, serta menandai laporan sebagai “Selesai” jika barang sudah ditemukan atau dikembalikan.
