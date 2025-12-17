@@ -14,13 +14,10 @@ class _FilterScreenState extends State<FilterScreen> {
   Set<String> selectedLokasi = {};
   Set<String> selectedUrutan = {};
 
-  // ===========================
-  // KATEGORI
-  // ===========================
   final List<String> kategoriList = [
     "Dompet",
     "Kartu Identitas",
-    "KTM / KTP",
+    "Kartu",
     "Kunci",
     "HP",
     "Laptop",
@@ -44,9 +41,6 @@ class _FilterScreenState extends State<FilterScreen> {
     "Elektronik",
   ];
 
-  // ===========================
-  //  LOKASI
-  // ===========================
   final List<String> lokasiList = [
     "Kedokteran",
     "Hukum",
@@ -72,9 +66,6 @@ class _FilterScreenState extends State<FilterScreen> {
     "Auditorium",
   ];
 
-  // ===========================
-  // URUTAN
-  // ===========================
   final List<String> urutanList = [
     "Terbaru",
     "Terlama",
@@ -86,9 +77,6 @@ class _FilterScreenState extends State<FilterScreen> {
     "1 Tahun"
   ];
 
-  // ======================================================
-  // CHIPS
-  // ======================================================
   Widget buildChip(String label, bool selected, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -124,7 +112,7 @@ class _FilterScreenState extends State<FilterScreen> {
             if (selected) {
               selectedSet.remove(item);
             } else {
-              selectedSet.clear(); // hanya satu opsi
+              selectedSet.clear();
               selectedSet.add(item);
             }
           });
@@ -133,9 +121,6 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  // ======================================================
-  //   SUBMIT FILTER
-  // ======================================================
   void applyFilter() {
     final kategori = selectedKategori.isEmpty ? "" : selectedKategori.first;
     final lokasi = selectedLokasi.isEmpty ? "" : selectedLokasi.first;
@@ -152,7 +137,6 @@ class _FilterScreenState extends State<FilterScreen> {
       backgroundColor: const Color(0xFFF0FFF0),
       body: Column(
         children: [
-          // TOP BAR
           TopBarBackBtn(
             title: "LoFo USU",
             onBack: () => context.go("/main?startIndex=1"),
@@ -191,9 +175,6 @@ class _FilterScreenState extends State<FilterScreen> {
 
                   const SizedBox(height: 20),
 
-                  // =============================
-                  // WHITE BOX
-                  // =============================
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
@@ -235,9 +216,6 @@ class _FilterScreenState extends State<FilterScreen> {
 
                   const SizedBox(height: 30),
 
-                  // =============================
-                  // BUTTONS
-                  // =============================
                   Row(
                     children: [
                       Expanded(

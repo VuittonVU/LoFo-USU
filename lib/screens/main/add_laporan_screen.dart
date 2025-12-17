@@ -43,9 +43,6 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     super.dispose();
   }
 
-  // ===================================================================
-  // VALIDATION EXTRA
-  // ===================================================================
   String? _validateName(String? v) {
     if (v == null || v.trim().isEmpty) return "Wajib diisi";
     if (!RegExp(r"^[a-zA-Z\s]+$").hasMatch(v.trim())) {
@@ -54,9 +51,7 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     return null;
   }
 
-  // ===================================================================
-  // DATE PICKER
-  // ===================================================================
+
   Future<void> _pickDate() async {
     final today = DateTime.now();
     final picked = await showDatePicker(
@@ -76,9 +71,6 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     }
   }
 
-  // ===================================================================
-  // IMAGE PICKER
-  // ===================================================================
   Future<void> _pickImages() async {
     if (_isPicking) return;
     _isPicking = true;
@@ -93,9 +85,6 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     }
   }
 
-  // ===================================================================
-  // SUBMIT
-  // ===================================================================
   Future<void> _submit() async {
     if (_isSubmitting) return;
 
@@ -119,13 +108,11 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Upload semua foto
       final fotoUrls = await StorageService.instance.uploadLaporanPhotos(
         userId: user.uid,
         files: _pickedImages,
       );
 
-      // Nama pelapor fallback
       final namaPelapor = pelaporCtrl.text.isNotEmpty
           ? pelaporCtrl.text
           : (user.displayName ?? user.email ?? "-");
@@ -159,9 +146,6 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     }
   }
 
-  // ===================================================================
-  // UI
-  // ===================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -333,9 +317,6 @@ class _AddLaporanScreenState extends State<AddLaporanScreen> {
     );
   }
 
-  // ===================================================================
-  // UI HELPERS
-  // ===================================================================
   Widget _formContainer({required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(16),

@@ -38,9 +38,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
   void _refresh() => setState(() {});
 
-  // =======================================
-  // VALIDATION SECTION 🔥
-  // =======================================
   bool get validNama =>
       RegExp(r'^[a-zA-Z ]+$').hasMatch(namaCtrl.text.trim());
 
@@ -56,9 +53,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
   bool get formValid =>
       validNama && validProdi && validFakultas && validNIM && validCard;
 
-  // =======================================
-  // PICK IMAGE
-  // =======================================
   Future<void> _pickCard() async {
     final img = await picker.pickImage(
       source: ImageSource.gallery,
@@ -69,9 +63,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
     }
   }
 
-  // =======================================
-  // SAVE IDENTITAS
-  // =======================================
   Future<void> _saveIdentitas() async {
     if (!formValid) return;
 
@@ -83,7 +74,7 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
     String? url;
 
-    // upload foto identitas
+
     url = await StorageService.instance.uploadKartuIdentitas(
       userId: user.uid,
       file: pickedCard!,
@@ -95,6 +86,7 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
       "fakultas": fakultasCtrl.text.trim(),
       "nim": nimCtrl.text.trim(),
       "kartu_identitas": url,
+      "status_verifikasi": "pending",
       "updatedAt": FieldValue.serverTimestamp(),
     });
 
@@ -121,9 +113,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
                 const SizedBox(height: 25),
 
-                // ==========================
-                // FIELD NAMA
-                // ==========================
                 LofoTextField(
                   label: "Nama",
                   hint: "Masukkan nama lengkap",
@@ -135,9 +124,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
                 const SizedBox(height: 18),
 
-                // ==========================
-                // FIELD PRODI
-                // ==========================
                 LofoTextField(
                   label: "Prodi",
                   hint: "Masukkan program studi",
@@ -149,9 +135,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
                 const SizedBox(height: 18),
 
-                // ==========================
-                // FIELD FAKULTAS
-                // ==========================
                 LofoTextField(
                   label: "Fakultas",
                   hint: "Masukkan fakultas",
@@ -163,9 +146,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
                 const SizedBox(height: 18),
 
-                // ==========================
-                // FIELD NIM
-                // ==========================
                 LofoTextField(
                   label: "NIM",
                   hint: "Masukkan NIM",
@@ -177,9 +157,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
                 const SizedBox(height: 18),
 
-                // ==========================
-                // UPLOAD KARTU IDENTITAS
-                // ==========================
                 const Text(
                   "Kartu Identitas (KTM/KTP)",
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -221,9 +198,6 @@ class _IdentitasScreenState extends State<IdentitasScreen> {
 
                 const SizedBox(height: 35),
 
-                // ==========================
-                // BUTTON NEXT
-                // ==========================
                 PrimaryButton(
                   text: loading ? "Memproses..." : "Berikutnya",
                   onPressed: formValid && !loading ? _saveIdentitas : null,

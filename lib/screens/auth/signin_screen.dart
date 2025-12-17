@@ -27,18 +27,25 @@ class _SignInScreenState extends State<SignInScreen> {
   bool loading = false;
   bool showPass = false;
 
-  // ============================================================
-  // LOGIN HANDLER
-  // ============================================================
+  static const adminEmail = "admin@lofo.app";
+
   Future<void> _handleLogin() async {
     final email = emailCtrl.text.trim();
     final pass = passCtrl.text.trim();
 
-    final emailErr = Validators.usuEmail(email);
-    final passErr = Validators.password(pass);
+    if (email != adminEmail) {
+      final emailErr = Validators.usuEmail(email);
+      if (emailErr != null) {
+        LofoSnack.show(context, emailErr, error: true);
+        return;
+      }
+    }
 
-    if (emailErr != null) return LofoSnack.show(context, emailErr, error: true);
-    if (passErr != null) return LofoSnack.show(context, passErr, error: true);
+    final passErr = Validators.password(pass);
+    if (passErr != null) {
+      LofoSnack.show(context, passErr, error: true);
+      return;
+    }
 
     setState(() => loading = true);
 
@@ -52,32 +59,51 @@ class _SignInScreenState extends State<SignInScreen> {
       return;
     }
 
-    // refresh user
     final user = FirebaseAuth.instance.currentUser;
     await user?.reload();
 
-    if (user != null && !user.emailVerified) {
+    if (user == null) return;
+
+    if (user.email == adminEmail) {
+      LofoSnack.show(context, "Login admin berhasil");
+      context.go(AppRoutes.admin);
+      return;
+    }
+
+    if (!user.emailVerified) {
       context.go(AppRoutes.emailVerification);
       return;
     }
 
-    // create user doc if not exists
-    if (user != null) {
-      await _auth.createUserDocumentIfNotExists(user);
-    }
+    await _auth.createUserDocumentIfNotExists(user);
 
     LofoSnack.show(context, "Login berhasil!");
     context.go(AppRoutes.mainNav);
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
+  Future<void> _handleForgotPassword() async {
+    final email = emailCtrl.text.trim();
+
+    if (email != adminEmail) {
+      final emailErr = Validators.usuEmail(email);
+      if (emailErr != null) {
+        LofoSnack.show(context, "Masukkan email USU yang valid.", error: true);
+        return;
+      }
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      LofoSnack.show(context, "Link reset password telah dikirim.");
+    } catch (_) {
+      LofoSnack.show(context, "Gagal mengirim reset password.", error: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return LofoScaffold(
-      child:
-      Padding(
+      child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
@@ -96,14 +122,12 @@ class _SignInScreenState extends State<SignInScreen> {
             ),
 
             const SizedBox(height: 16),
-
             Center(child: Image.asset("assets/logo.png", height: 250)),
-
             const SizedBox(height: 32),
 
             LofoTextField(
-              label: "Email USU",
-              hint: "Masukkan email USU",
+              label: "Email",
+              hint: "Masukkan email",
               icon: Icons.mail,
               controller: emailCtrl,
               showInternalLabel: true,
@@ -121,6 +145,22 @@ class _SignInScreenState extends State<SignInScreen> {
               suffix: GestureDetector(
                 onTap: () => setState(() => showPass = !showPass),
                 child: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: _handleForgotPassword,
+                child: const Text(
+                  "Lupa password?",
+                  style: TextStyle(
+                    color: Color(0xFF2F9E44),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
 

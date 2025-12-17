@@ -11,7 +11,7 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90, // match HomeScreen
+      height: 90,
       width: double.infinity,
       color: const Color(0xFF4CAF50),
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -22,7 +22,7 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
             title,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 21,       // match HomeScreen
+              fontSize: 21,
               fontWeight: FontWeight.w700,
             ),
           ),

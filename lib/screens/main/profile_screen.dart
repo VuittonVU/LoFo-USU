@@ -5,31 +5,33 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final String? userId; // null = diri sendiri
+
+  const ProfileScreen({super.key, this.userId});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // ============================================================
-  // GET USER DATA
-  // ============================================================
+  String? get targetUid =>
+      widget.userId ?? FirebaseAuth.instance.currentUser?.uid;
+
+  bool get isSelfProfile =>
+      widget.userId == null ||
+          widget.userId == FirebaseAuth.instance.currentUser?.uid;
+
   Future<Map<String, dynamic>> _getUserData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return {};
+    if (targetUid == null) return {};
 
     final snap = await FirebaseFirestore.instance
         .collection('users')
-        .doc(user.uid)
+        .doc(targetUid)
         .get();
 
     return snap.data() ?? {};
   }
 
-  // ============================================================
-  // COUNT USER REPORTS
-  // ============================================================
   Stream<int> _countUserReports(String uid) {
     return FirebaseFirestore.instance
         .collection("laporan")
@@ -38,9 +40,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .map((s) => s.size);
   }
 
-  // ============================================================
-  // COUNT FINISHED REPORTS
-  // ============================================================
   Stream<int> _countReturned(String uid) {
     return FirebaseFirestore.instance
         .collection("laporan")
@@ -50,22 +49,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .map((s) => s.size);
   }
 
-  // ============================================================
-  // SAFE URL LAUNCHER
-  // ============================================================
   Future<void> _launch(String url) async {
     if (url.trim().isEmpty || url == "-") return;
     final uri = Uri.parse(url);
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
+  void _showReportDialog() {
+    final reasonCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Laporkan Akun"),
+        content: TextField(
+          controller: reasonCtrl,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: "Tulis alasan laporan",
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text(
+              "Kirim",
+              style: TextStyle(color: Colors.white),
+            ),
+            onPressed: () async {
+              if (reasonCtrl.text.trim().isEmpty) return;
+
+              try {
+                await FirebaseFirestore.instance
+                    .collection("account_reports")
+                    .add({
+                  "reported_uid": targetUid,
+                  "reporter_uid":
+                  FirebaseAuth.instance.currentUser!.uid,
+                  "reason": reasonCtrl.text.trim(),
+                  "status": "pending",
+                  "createdAt": FieldValue.serverTimestamp(),
+                });
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Laporan berhasil dikirim"),
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Gagal mengirim laporan: $e"),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       backgroundColor: const Color(0xFFE3F3E3),
 
@@ -79,45 +135,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Stack(
               alignment: Alignment.center,
               children: [
+                if (!isSelfProfile)
+                  Positioned(
+                    left: 0,
+                    child: IconButton(
+                      icon:
+                      const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => context.pop(),
+                    ),
+                  ),
+
                 const Text(
                   "LoFo USU",
                   style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w700),
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
 
-                Positioned(
-                  right: 0,
-                  child: PopupMenuButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onSelected: (value) async {
-                      if (value == "edit") {
-                        await context.push("/edit-profile");
-
-                        // 🔥 Setelah kembali dari edit-profile → REFRESH data
-                        setState(() {});
-                      }
-                      else if (value == "settings") {
-                        context.push("/account-settings");
-                      }
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: "edit", child: Text("Edit Profil")),
-                      PopupMenuItem(
-                          value: "settings", child: Text("Pengaturan Akun")),
-                    ],
+                if (isSelfProfile)
+                  Positioned(
+                    right: 0,
+                    child: PopupMenuButton(
+                      icon: const Icon(Icons.more_vert,
+                          color: Colors.white),
+                      onSelected: (value) async {
+                        if (value == "edit") {
+                          await context.push("/edit-profile");
+                          setState(() {});
+                        } else if (value == "settings") {
+                          context.push("/account-settings");
+                        }
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                            value: "edit", child: Text("Edit Profil")),
+                        PopupMenuItem(
+                            value: "settings",
+                            child: Text("Pengaturan Akun")),
+                      ],
+                    ),
                   ),
-                )
               ],
             ),
           ),
         ),
       ),
 
-      // ============================================================
-      // BODY
-      // ============================================================
       body: FutureBuilder(
         future: _getUserData(),
         builder: (_, snapshot) {
@@ -135,21 +200,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final phone = (data["telepon"] ?? "-").toString();
           final igRaw = (data["instagram"] ?? "-").toString();
           final wa = (data["whatsapp"] ?? "-").toString();
-          final emailKontak = (data["email_kontak"] ?? "-").toString();
+          final emailKontak =
+          (data["email_kontak"] ?? "-").toString();
 
           final ig = igRaw.startsWith("@") ? igRaw.substring(1) : igRaw;
+          final bool isVerified = data["verified"] == true;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                // FOTO PROFIL
+                // FOTO
                 Container(
                   width: 130,
                   height: 130,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.green.shade300, width: 3),
+                    border: Border.all(
+                        color: Colors.green.shade300, width: 3),
                   ),
                   child: ClipOval(
                     child: foto.isEmpty
@@ -169,45 +237,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text(nama,
                     style: const TextStyle(
                         fontSize: 22, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 6),
                 Text(prodi,
-                    style:
-                    TextStyle(fontSize: 15, color: Colors.grey.shade700)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey.shade700)),
                 Text(nim,
-                    style:
-                    TextStyle(fontSize: 14, color: Colors.grey.shade700)),
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700)),
+
+                const SizedBox(height: 8),
+
+                // VERIFIED BADGE
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isVerified
+                        ? Colors.green.shade100
+                        : Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: isVerified
+                            ? Colors.green
+                            : Colors.orange),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isVerified
+                            ? Icons.verified
+                            : Icons.hourglass_top,
+                        size: 16,
+                        color: isVerified
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isVerified
+                            ? "Terverifikasi"
+                            : "Belum Terverifikasi",
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (!isSelfProfile)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon:
+                        const Icon(Icons.flag, color: Colors.red),
+                        label: const Text(
+                          "Laporkan Akun",
+                          style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side:
+                          const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius:
+                              BorderRadius.circular(18)),
+                        ),
+                        onPressed: _showReportDialog,
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 20),
 
-                // ============================================================
-                // STATISTIK
-                // ============================================================
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    StreamBuilder<int>(
-                      stream: _countUserReports(user!.uid),
-                      builder: (_, snap) {
-                        final c = snap.data ?? 0;
-                        return _statCard("$c", "Laporan Dibuat");
-                      },
-                    ),
-                    const SizedBox(width: 14),
-                    StreamBuilder<int>(
-                      stream: _countReturned(user.uid),
-                      builder: (_, snap) {
-                        final c = snap.data ?? 0;
-                        return _statCard("$c", "Dikembalikan");
-                      },
-                    ),
-                  ],
-                ),
+                if (targetUid != null)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      StreamBuilder<int>(
+                        stream: _countUserReports(targetUid!),
+                        builder: (_, snap) =>
+                            _statCard("${snap.data ?? 0}",
+                                "Laporan Dibuat"),
+                      ),
+                      const SizedBox(width: 14),
+                      StreamBuilder<int>(
+                        stream: _countReturned(targetUid!),
+                        builder: (_, snap) =>
+                            _statCard("${snap.data ?? 0}",
+                                "Dikembalikan"),
+                      ),
+                    ],
+                  ),
 
                 const SizedBox(height: 24),
 
-                // ============================================================
-                // KONTAK
-                // ============================================================
                 _buildContactSection(
                     phone, igRaw, ig, wa, emailKontak),
               ],
@@ -218,11 +349,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ============================================================
-  // CONTACT SECTION
-  // ============================================================
   Widget _buildContactSection(
-      String phone, String igRaw, String ig, String wa, String emailKontak) {
+      String phone,
+      String igRaw,
+      String ig,
+      String wa,
+      String emailKontak) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -235,18 +367,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text("Kontak:",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              style:
+              TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
-
           _contactItem(Icons.phone, "Nomor Telepon:", phone,
                   () => _launch("tel:$phone")),
-
           _contactItem(Icons.camera_alt, "Instagram:", igRaw,
                   () => _launch("https://instagram.com/$ig")),
-
           _contactItem(Icons.chat, "WhatsApp:", wa,
                   () => _launch("https://wa.me/$wa")),
-
           _contactItem(Icons.mail, "Email Kontak:", emailKontak,
                   () => _launch("mailto:$emailKontak")),
         ],
@@ -254,12 +383,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ============================================================
-  // STAT CARD
-  // ============================================================
   Widget _statCard(String value, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+      padding:
+      const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -268,29 +395,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           Text(value,
-              style:
-              const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Text(label,
+              style:
+              const TextStyle(color: Colors.grey, fontSize: 13)),
         ],
       ),
     );
   }
 
-  // ============================================================
-  // CONTACT ITEM
-  // ============================================================
   Widget _contactItem(
-      IconData icon, String label, String value, VoidCallback onTap) {
+      IconData icon,
+      String label,
+      String value,
+      VoidCallback onTap) {
     return InkWell(
       onTap: value == "-" ? null : onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.green.withOpacity(0.4)),
+          border:
+          Border.all(color: Colors.green.withOpacity(0.4)),
         ),
         child: Row(
           children: [
@@ -301,14 +432,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 text: TextSpan(
-                  style: const TextStyle(color: Colors.black, fontSize: 15),
+                  style:
+                  const TextStyle(color: Colors.black, fontSize: 15),
                   children: [
                     TextSpan(
                         text: "$label ",
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600)),
                     TextSpan(
                         text: value,
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),

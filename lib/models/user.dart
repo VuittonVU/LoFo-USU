@@ -14,10 +14,11 @@ class UserModel {
   final String whatsapp;
   final String emailKontak;
 
-  final String fotoProfil; // <-- ADD THIS
+  final String fotoProfil;
 
   final Timestamp createdAt;
   final Timestamp? updatedAt;
+  final String verifikasiStatus;
 
   UserModel({
     required this.uid,
@@ -31,9 +32,10 @@ class UserModel {
     required this.instagram,
     required this.whatsapp,
     required this.emailKontak,
-    required this.fotoProfil, // <-- ADD
+    required this.fotoProfil,
     required this.createdAt,
     this.updatedAt,
+    required this.verifikasiStatus,
   });
 
   factory UserModel.empty(String uid, String email) {
@@ -49,9 +51,10 @@ class UserModel {
       instagram: "",
       whatsapp: "",
       emailKontak: "",
-      fotoProfil: "", // <-- ADD
+      fotoProfil: "",
       createdAt: Timestamp.now(),
       updatedAt: null,
+      verifikasiStatus: "none",
     );
   }
 
@@ -80,9 +83,10 @@ class UserModel {
       instagram: instagram ?? this.instagram,
       whatsapp: whatsapp ?? this.whatsapp,
       emailKontak: emailKontak ?? this.emailKontak,
-      fotoProfil: fotoProfil ?? this.fotoProfil, // <-- ADD
+      fotoProfil: fotoProfil ?? this.fotoProfil,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      verifikasiStatus: this.verifikasiStatus,
     );
   }
 
@@ -101,9 +105,10 @@ class UserModel {
       instagram: data["instagram"] ?? "",
       whatsapp: data["whatsapp"] ?? "",
       emailKontak: data["email_kontak"] ?? "",
-      fotoProfil: data["fotoProfil"] ?? "", // <-- ADD
+      fotoProfil: data["fotoProfil"] ?? "",
       createdAt: data["createdAt"] ?? Timestamp.now(),
       updatedAt: data["updatedAt"],
+      verifikasiStatus: (data["verifikasi_identitas"]?["status"]) ?? "none",
     );
   }
 
@@ -119,7 +124,7 @@ class UserModel {
       "instagram": instagram,
       "whatsapp": whatsapp,
       "email_kontak": emailKontak,
-      "fotoProfil": fotoProfil, // <-- ADD
+      "fotoProfil": fotoProfil,
       "createdAt": createdAt,
       "updatedAt": updatedAt,
     };

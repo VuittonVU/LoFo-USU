@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../widgets/lofo_text_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../config/routes.dart';
 
@@ -41,9 +40,6 @@ class _KontakScreenState extends State<KontakScreen> {
 
   void _refresh() => setState(() {});
 
-  // ============================================================
-  // LOAD USER DATA
-  // ============================================================
   Future<void> _load() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -64,9 +60,6 @@ class _KontakScreenState extends State<KontakScreen> {
     setState(() {});
   }
 
-  // ============================================================
-  // PICK NEW PHOTO
-  // ============================================================
   Future pickPhoto() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
@@ -75,9 +68,6 @@ class _KontakScreenState extends State<KontakScreen> {
     }
   }
 
-  // ============================================================
-  // VALIDATOR
-  // ============================================================
   bool get validPhone =>
       RegExp(r'^[0-9]{10,15}$').hasMatch(telpCtrl.text.trim());
 
@@ -94,9 +84,6 @@ class _KontakScreenState extends State<KontakScreen> {
   bool get formValid =>
       validPhone && validEmail && validIG && validWA;
 
-  // ============================================================
-  // SAVE CONTACT + PHOTO
-  // ============================================================
   Future<void> save() async {
     if (loading || !formValid) return;
 
@@ -110,7 +97,6 @@ class _KontakScreenState extends State<KontakScreen> {
     String uploadedPhoto = photoUrl;
 
     try {
-      // Upload photo
       if (newPhoto != null) {
         final ref = FirebaseStorage.instance
             .ref("profile_photos/${user.uid}.jpg");
@@ -118,11 +104,9 @@ class _KontakScreenState extends State<KontakScreen> {
         await ref.putFile(newPhoto!);
         uploadedPhoto = await ref.getDownloadURL();
 
-        // Update FirebaseAuth
         await user.updatePhotoURL(uploadedPhoto);
       }
 
-      // Update Firestore
       await FirebaseFirestore.instance.collection("users").doc(user.uid).update({
         "telepon": telpCtrl.text.trim(),
         "instagram": ig,
@@ -132,7 +116,6 @@ class _KontakScreenState extends State<KontakScreen> {
         "updatedAt": FieldValue.serverTimestamp(),
       });
 
-      // Done
       if (mounted) context.go(AppRoutes.berhasil);
 
     } catch (e) {
@@ -146,9 +129,6 @@ class _KontakScreenState extends State<KontakScreen> {
     if (mounted) setState(() {});
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,9 +141,6 @@ class _KontakScreenState extends State<KontakScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                // ============================================================
-                // PROFILE PHOTO
-                // ============================================================
                 Center(
                   child: Stack(
                     children: [
@@ -205,9 +182,6 @@ class _KontakScreenState extends State<KontakScreen> {
 
                 const SizedBox(height: 30),
 
-                // ============================================================
-                // CONTACT FORM
-                // ============================================================
                 _contactItem(
                   iconPath: "assets/icons/phone.png",
                   label: "Nomor Telepon:",
@@ -272,9 +246,6 @@ class _KontakScreenState extends State<KontakScreen> {
     );
   }
 
-  // ============================================================
-  // CONTACT ITEM WIDGET
-  // ============================================================
   Widget _contactItem({
     required String iconPath,
     required String label,

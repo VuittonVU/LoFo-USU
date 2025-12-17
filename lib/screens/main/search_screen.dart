@@ -56,7 +56,6 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>> _applyFilter(List<Map<String, dynamic>> items) {
     List<Map<String, dynamic>> result = [...items];
 
-    // SEARCH
     if (searchCtrl.text.isNotEmpty) {
       final q = searchCtrl.text.toLowerCase();
       result = result.where((i) =>
@@ -65,17 +64,14 @@ class _SearchScreenState extends State<SearchScreen> {
       ).toList();
     }
 
-    // KATEGORI
     if (widget.kategori.isNotEmpty) {
       result = result.where((i) => (i['kategori'] ?? '') == widget.kategori).toList();
     }
 
-    // LOKASI
     if (widget.lokasi.isNotEmpty) {
       result = result.where((i) => (i['lokasi'] ?? '') == widget.lokasi).toList();
     }
 
-    // SORTING
     if (widget.urutan == "A-Z") {
       result.sort((a, b) => (a['nama_barang'] ?? '').compareTo(b['nama_barang'] ?? ''));
     } else if (widget.urutan == "Z-A") {
@@ -217,9 +213,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           deskripsi: item['deskripsi'] ?? '-',
                           reporterName: item['nama_pelapor'] ?? '-',
 
-                          // 🔥 CUSTOM onTap berdasarkan role
                           onTap: () {
-                            // CREATOR → detail pelapor
                             if (uid == ownerId) {
                               context.push(
                                 AppRoutes.detailPelapor,
@@ -238,7 +232,6 @@ class _SearchScreenState extends State<SearchScreen> {
                               );
                             }
 
-                            // USER UMUM → detail umum
                             else {
                               context.push(
                                 AppRoutes.detailUmum,

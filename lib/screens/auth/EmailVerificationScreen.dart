@@ -62,11 +62,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   Future<void> backToSignUp() async {
-    // Logout dulu supaya user bisa daftar ulang
     await FirebaseAuth.instance.signOut();
     if (!mounted) return;
 
-    // Balik ke halaman daftar
     context.go(AppRoutes.signUp);
   }
 
@@ -122,9 +120,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
               const SizedBox(height: 30),
 
-              // =====================================================
-              // NEW : Kembali ke Daftar (Jika salah email)
-              // =====================================================
               TextButton(
                 onPressed: backToSignUp,
                 child: const Text(

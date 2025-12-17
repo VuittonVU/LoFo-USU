@@ -9,8 +9,8 @@ class LofoBackground extends StatelessWidget {
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFFFFFFFF),     // putih
-            Color(0xFFB6E3B6),     // hijau muda
+            Color(0xFFFFFFFF),
+            Color(0xFFB6E3B6),
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,

@@ -16,16 +16,13 @@ class LofoScaffold extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          /// FULLSCREEN GRADIENT
           const Positioned.fill(child: LofoBackground()),
 
-          /// CONTENT + AUTO SCROLL IF LONG
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  /// MIN HEIGHT = full screen
                   minHeight: MediaQuery.of(context).size.height,
                 ),
                 child: Padding(

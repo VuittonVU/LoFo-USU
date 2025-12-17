@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback? onPressed; // nullable untuk disabled
+  final VoidCallback? onPressed;
 
   const PrimaryButton({
     super.key,
@@ -14,7 +14,6 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool disabled = onPressed == null;
 
-    // warna default & disabled
     final Color defaultGreen = const Color(0xFF4CAF50);
     final Color disabledGreen = const Color(0xFF4CAF50).withValues(alpha: 0.5);
 

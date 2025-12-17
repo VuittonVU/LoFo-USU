@@ -28,9 +28,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   final _auth = AuthService.instance;
 
-  // ===========================
-  // VALIDATION
-  // ===========================
   bool get validEmail =>
       Validators.usuEmail(emailCtrl.text.trim()) == null;
 
@@ -52,9 +49,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _refresh() => setState(() {});
 
-  // ===========================
-  // SIGN UP
-  // ===========================
   Future<void> _handleSignUp() async {
     if (!formValid) {
       LofoSnack.show(context, "Periksa kembali data yang kamu isi.",
@@ -88,9 +82,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     context.go(AppRoutes.emailVerification);
   }
 
-  // ===========================
-  // UI
-  // ===========================
   @override
   Widget build(BuildContext context) {
     return LofoScaffold(
@@ -114,9 +105,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 20),
 
-              // =========================
-              // EMAIL
-              // =========================
               LofoTextField(
                 label: "Email USU",
                 hint: "example@students.usu.ac.id",
@@ -129,9 +117,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 20),
 
-              // =========================
-              // PASSWORD
-              // =========================
               LofoTextField(
                 label: "Password",
                 hint: "Minimal 6 karakter",
@@ -148,9 +133,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 20),
 
-              // =========================
-              // CONFIRM PASSWORD
-              // =========================
               LofoTextField(
                 label: "Konfirmasi Password",
                 hint: "Ulangi password",
@@ -169,9 +151,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 40),
 
-              // =========================
-              // BUTTON SIGN UP
-              // =========================
               PrimaryButton(
                 text: loading ? "Memproses..." : "Daftar",
                 onPressed: formValid && !loading ? _handleSignUp : null,

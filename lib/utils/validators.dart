@@ -2,7 +2,6 @@ class Validators {
   static String? usuEmail(String value) {
     if (value.isEmpty) return "Email tidak boleh kosong";
 
-    // Mengizinkan SEMUA email yang berakhiran .usu.ac.id
     final pattern = RegExp(r".+@(.+\.)?usu\.ac\.id$");
 
     if (!pattern.hasMatch(value)) {

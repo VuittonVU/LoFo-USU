@@ -2,18 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'config/routes.dart';
 
-// Firebase
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
-// Provider
 import 'package:provider/provider.dart';
 import 'providers/user_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // INIT FIREBASE
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -21,9 +18,6 @@ void main() async {
   runApp(const AppRoot());
 }
 
-// =======================================================
-// 1. WRAPPER ROOT → supaya MultiProvider berada di luar MyApp
-// =======================================================
 class AppRoot extends StatelessWidget {
   const AppRoot({super.key});
 
@@ -38,9 +32,6 @@ class AppRoot extends StatelessWidget {
   }
 }
 
-// =======================================================
-// 2. MyApp → hanya MaterialApp.router & routerConfig
-// =======================================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

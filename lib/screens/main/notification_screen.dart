@@ -26,17 +26,11 @@ class NotificationScreen extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // =========================================================
-            // TOP BAR (MENGGUNAKAN WIDGET)
-            // =========================================================
             TopBarBackBtn(
               title: "LoFo USU",
               onBack: () => context.go('/main'),
             ),
 
-            // =========================================================
-            // CONTENT
-            // =========================================================
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
@@ -74,9 +68,6 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // =========================================================
-  // DATE BUBBLE
-  // =========================================================
   Widget _buildDateBubble(String date) {
     return Center(
       child: Container(
@@ -105,9 +96,6 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  // =========================================================
-  // NOTIFICATION CARD
-  // =========================================================
   Widget _buildNotificationCard(String text, String time) {
     return Container(
       padding: const EdgeInsets.all(18),

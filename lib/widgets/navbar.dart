@@ -17,10 +17,8 @@ class MainNavigationBar extends StatelessWidget {
     final double bottomInset = MediaQuery.of(context).viewPadding.bottom;
 
     return Container(
-      // 🔥 background nutup SEMUA area (termasuk gesture bar & rotate)
       color: _green,
 
-      // 🔥 tinggi navbar + system inset
       height: 76 + bottomInset,
 
       child: SafeArea(
@@ -32,9 +30,6 @@ class MainNavigationBar extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // =========================
-            // BAR UTAMA
-            // =========================
             Align(
               alignment: Alignment.topCenter,
               child: SizedBox(
@@ -52,9 +47,6 @@ class MainNavigationBar extends StatelessWidget {
               ),
             ),
 
-            // =========================
-            // FAB TENGAH
-            // =========================
             Positioned(
               top: -32,
               left: 0,

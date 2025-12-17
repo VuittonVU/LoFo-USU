@@ -53,9 +53,6 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ===============================================
-          // STREAM LIST LAPORAN
-          // ===============================================
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: FirestoreService.instance.streamAllLaporan(),
@@ -103,9 +100,6 @@ class HomeScreen extends StatelessWidget {
                         ownerId: ownerId,
 
                         onTap: () {
-                          // ===========================
-                          // CREATOR → MASUK SCREEN PELAPOR
-                          // ===========================
                           if (uid == ownerId) {
                             context.push(
                               AppRoutes.detailPelapor,
@@ -125,9 +119,6 @@ class HomeScreen extends StatelessWidget {
                             );
                           }
 
-                          // ===========================
-                          // USER UMUM → MASUK SCREEN UMUM
-                          // ===========================
                           else {
                             context.push(
                               AppRoutes.detailUmum,

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 class LofoTextField extends StatelessWidget {
   final String? label;
   final String hint;
-  final IconData? icon;          // <- jadikan optional
-  final Widget? iconWidget;      // <- tambahkan support icon asset
+  final IconData? icon;
+  final Widget? iconWidget;
   final bool obscure;
   final Widget? suffix;
   final bool showInternalLabel;
@@ -14,8 +14,8 @@ class LofoTextField extends StatelessWidget {
     super.key,
     this.label,
     required this.hint,
-    this.icon,                  // <- tetap support Icon
-    this.iconWidget,            // <- NEW
+    this.icon,
+    this.iconWidget,
     this.obscure = false,
     this.suffix,
     this.showInternalLabel = false,
@@ -58,9 +58,6 @@ class LofoTextField extends StatelessWidget {
                 fontSize: 14,
               ),
 
-              // ----------------------------------------
-              // FIX: gunakan asset icon jika ada
-              // ----------------------------------------
               prefixIcon: iconWidget != null
                   ? Padding(
                 padding: const EdgeInsets.all(10),

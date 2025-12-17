@@ -38,10 +38,8 @@ class EditLaporanScreen extends StatefulWidget {
 class _EditLaporanScreenState extends State<EditLaporanScreen> {
   final picker = ImagePicker();
 
-  /// Foto lama dari server
   late List<String> oldImages;
 
-  /// Foto baru dari device
   List<File> newImages = [];
 
   final namaCtrl = TextEditingController();
@@ -64,9 +62,16 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     deskripsiCtrl.text = widget.description;
   }
 
-  // ============================================================
-  // VALIDASI NAMA
-  // ============================================================
+  @override
+  void dispose() {
+    namaCtrl.dispose();
+    lokasiCtrl.dispose();
+    tanggalCtrl.dispose();
+    kategoriCtrl.dispose();
+    deskripsiCtrl.dispose();
+    super.dispose();
+  }
+
   String? _validateName(String v) {
     if (v.trim().isEmpty) return "Nama barang wajib diisi";
     if (!RegExp(r"^[a-zA-Z\s]+$").hasMatch(v.trim())) {
@@ -75,67 +80,39 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     return null;
   }
 
-  // ============================================================
-  // AMBIL FOTO BARU
-  // ============================================================
-  Future pickImage() async {
+  Future<void> pickImage() async {
+    if (newImages.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Hanya 1 foto yang diperbolehkan")),
+      );
+      return;
+    }
+
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      newImages.add(File(picked.path));
-      setState(() {});
+      setState(() {
+        newImages = [File(picked.path)];
+      });
     }
   }
 
-  // ============================================================
-  // HAPUS FOTO LAMA
-  // ============================================================
   void deleteOldImage(int index) {
     oldImages.removeAt(index);
     setState(() {});
   }
 
-  // ============================================================
-  // HAPUS FOTO BARU
-  // ============================================================
-  void deleteNewImage(int index) {
-    newImages.removeAt(index);
+  void deleteNewImage() {
+    newImages.clear();
     setState(() {});
   }
 
-  // ============================================================
-  // FULLSCREEN VIEW
-  // ============================================================
-  void _openFullImage(String url) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) {
-        return GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            color: Colors.black,
-            child: Center(
-              child: url.startsWith("http")
-                  ? Image.network(url)
-                  : Image.file(File(url)),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ============================================================
-  // DATE PICKER
-  // ============================================================
-  Future pickDate() async {
+  Future<void> pickDate() async {
     final now = DateTime.now();
     final selected = await showDatePicker(
       context: context,
       initialDate: now,
       firstDate: DateTime(2020),
       lastDate: now,
-      helpText: "Pilih tanggal ditemukan",
     );
 
     if (selected != null) {
@@ -147,15 +124,13 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     }
   }
 
-  // ============================================================
-  // SAVE LAPORAN
-  // ============================================================
-  Future _saveLaporan() async {
+  Future<void> _saveLaporan() async {
     if (_saving) return;
 
     final err = _validateName(namaCtrl.text);
     if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(err)));
       return;
     }
 
@@ -170,25 +145,20 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     List<String> finalImages = [...oldImages];
 
     try {
-      // Upload foto baru
-      for (var img in newImages) {
-        final url = await StorageService.instance.uploadLaporanPhoto(img);
+      if (newImages.isNotEmpty) {
+        final url =
+        await StorageService.instance.uploadLaporanPhoto(newImages.first);
         finalImages.add(url);
       }
 
-      // Update text
-      await FirestoreService.instance.updateLaporan(
-        widget.laporanId,
-        {
-          "nama_barang": namaCtrl.text.trim(),
-          "tanggal": tanggalCtrl.text.trim(),
-          "lokasi": lokasiCtrl.text.trim(),
-          "kategori": kategoriCtrl.text.trim(),
-          "deskripsi": deskripsiCtrl.text.trim(),
-        },
-      );
+      await FirestoreService.instance.updateLaporan(widget.laporanId, {
+        "nama_barang": namaCtrl.text.trim(),
+        "tanggal": tanggalCtrl.text.trim(),
+        "lokasi": lokasiCtrl.text.trim(),
+        "kategori": kategoriCtrl.text.trim(),
+        "deskripsi": deskripsiCtrl.text.trim(),
+      });
 
-      // Update foto
       await FirestoreService.instance.updateLaporanPhotos(
         laporanId: widget.laporanId,
         fotoUrls: finalImages,
@@ -208,9 +178,6 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     _saving = false;
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -224,12 +191,15 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
 
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                MediaQuery.of(context).padding.bottom + 100,
+              ),
               child: Column(
                 children: [
-
                   _imageSection(),
-
                   const SizedBox(height: 20),
 
                   _formBox([
@@ -240,17 +210,15 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
                   const SizedBox(height: 20),
 
                   _formBox([
-                    _label("Tanggal Ditemukan (tap untuk pilih)"),
+                    _label("Tanggal Ditemukan"),
                     GestureDetector(
                       onTap: pickDate,
                       child: AbsorbPointer(child: _editable(tanggalCtrl)),
                     ),
                     const SizedBox(height: 12),
-
                     _label("Lokasi"),
                     _editable(lokasiCtrl),
                     const SizedBox(height: 12),
-
                     _label("Kategori"),
                     _editable(kategoriCtrl),
                   ]),
@@ -263,7 +231,6 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
                   ]),
 
                   const SizedBox(height: 28),
-
                   _saveButton(),
                 ],
               ),
@@ -274,56 +241,61 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     );
   }
 
-  // ============================================================
-  // IMAGE SECTION — Bisa Hapus & Tambah Foto
-  // ============================================================
   Widget _imageSection() {
     return Column(
       children: [
-        // FOTO LAMA
         if (oldImages.isNotEmpty)
-          ...List.generate(oldImages.length, (i) {
-            return Stack(
-              children: [
-                GestureDetector(
-                  onTap: () => _openFullImage(oldImages[i]),
-                  child: _imageBox(oldImages[i]),
-                ),
-                _deleteBtn(() => deleteOldImage(i)),
-              ],
-            );
-          }),
-
-        // FOTO BARU
-        ...List.generate(newImages.length, (i) {
-          return Stack(
+          Stack(
             children: [
-              GestureDetector(
-                onTap: () => _openFullImage(newImages[i].path),
-                child: _imageBox(newImages[i].path),
-              ),
-              _deleteBtn(() => deleteNewImage(i)),
+              _imageBox(oldImages.first),
+              _deleteBtn(() {
+                setState(() => oldImages.clear());
+              }),
             ],
-          );
-        }),
+          ),
 
-        // BUTTON TAMBAH
-        GestureDetector(
-          onTap: pickImage,
-          child: Container(
-            height: 160,
-            width: double.infinity,
-            margin: const EdgeInsets.only(top: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Center(
-              child: Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+        if (newImages.isNotEmpty)
+          Stack(
+            children: [
+              _imageBox(newImages.first.path),
+              _deleteBtn(() {
+                setState(() => newImages.clear());
+              }),
+            ],
+          ),
+
+        if (oldImages.isEmpty && newImages.isEmpty)
+          GestureDetector(
+            onTap: pickImage,
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Center(
+                child: Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+              ),
             ),
           ),
-        ),
       ],
+    );
+  }
+
+
+  Widget _imageBox(String path) {
+    return Container(
+      height: 160,
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: path.startsWith("http")
+            ? Image.network(path, fit: BoxFit.cover)
+            : Image.file(File(path), fit: BoxFit.cover),
+      ),
     );
   }
 
@@ -345,20 +317,6 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
     );
   }
 
-  Widget _imageBox(String path) {
-    return Container(
-      height: 160,
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: path.startsWith("http")
-            ? Image.network(path, fit: BoxFit.cover)
-            : Image.file(File(path), fit: BoxFit.cover),
-      ),
-    );
-  }
-
   Widget _saveButton() {
     return SizedBox(
       width: double.infinity,
@@ -374,18 +332,15 @@ class _EditLaporanScreenState extends State<EditLaporanScreen> {
         child: const Text(
           "Simpan Perubahan",
           style: TextStyle(
-            color: Color(0xFFFFFFFF),
             fontWeight: FontWeight.w700,
             fontSize: 16,
+            color: Colors.white,
           ),
         ),
       ),
     );
   }
 
-  // ============================================================
-  // FORM COMPONENTS
-  // ============================================================
   Widget _formBox(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(16),

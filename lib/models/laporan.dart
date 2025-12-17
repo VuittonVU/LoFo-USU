@@ -3,16 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Laporan {
   final String id;
   final String idPengguna;
-  final String? idPengklaim;
+  final String idPengklaim;
   final String namaBarang;
   final String namaPelapor;
   final String kategori;
   final String lokasi;
   final String deskripsi;
   final String tanggal;
+  final String? namaPengklaim;
 
   final List<String> fotoBarang;
-  final List<String> dokumentasi;   // <-- ADD
+  final List<String> dokumentasi;
   final String statusLaporan;
 
   final Timestamp createdAt;
@@ -21,7 +22,6 @@ class Laporan {
   Laporan({
     required this.id,
     required this.idPengguna,
-    required this.idPengklaim,
     required this.namaBarang,
     required this.namaPelapor,
     required this.kategori,
@@ -29,28 +29,37 @@ class Laporan {
     required this.deskripsi,
     required this.tanggal,
     required this.fotoBarang,
-    required this.dokumentasi,   // <-- ADD
+    required this.dokumentasi,
     required this.statusLaporan,
     required this.createdAt,
     required this.updatedAt,
+    required this.namaPengklaim,
+    required this.idPengklaim,
   });
 
   factory Laporan.fromDocument(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
+    final rawDok = data['dokumentasi'];
+
+    final List<String> dokumentasi = rawDok is List
+        ? rawDok.whereType<String>().toList()
+        : [];
+
     return Laporan(
       id: doc.id,
       idPengguna: data["id_pengguna"],
-      idPengklaim: data["id_pengklaim"],
       namaBarang: data["nama_barang"],
       namaPelapor: data["nama_pelapor"],
       kategori: data["kategori"],
       lokasi: data["lokasi"],
       deskripsi: data["deskripsi"],
       tanggal: data["tanggal"],
+      namaPengklaim: data["nama_pengklaim"],
+      idPengklaim: data["id_pengklaim"],
 
       fotoBarang: List<String>.from(data["foto_barang"] ?? []),
-      dokumentasi: List<String>.from(data["dokumentasi"] ?? []), // <-- ADD
+      dokumentasi: dokumentasi,
 
       statusLaporan: data["status_laporan"],
       createdAt: data["createdAt"] ?? Timestamp.now(),
@@ -69,7 +78,7 @@ class Laporan {
       "deskripsi": deskripsi,
       "tanggal": tanggal,
       "foto_barang": fotoBarang,
-      "dokumentasi": dokumentasi, // <-- ADD
+      "dokumentasi": dokumentasi,
       "status_laporan": statusLaporan,
       "createdAt": createdAt,
       "updatedAt": updatedAt,

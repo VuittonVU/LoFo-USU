@@ -31,7 +31,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
-    index = widget.startIndex.clamp(0, 4); // 🔥 biar aman
+    index = widget.startIndex.clamp(0, 4);
   }
 
   @override
@@ -53,7 +53,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
 
     return Scaffold(
-      body: IndexedStack(        // 🔥 lebih aman dari List[index]
+      body: IndexedStack(
         index: index,
         children: screens,
       ),

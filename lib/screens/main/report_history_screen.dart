@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/firestore_service.dart';
 import '../../widgets/item_card.dart';
-import '../../widgets/green_top_bar.dart';   // <-- PENTING
+import '../../widgets/green_top_bar.dart';
 import '../../config/routes.dart';
 
 enum ReportStatus { semua, aktif, dalamProses, selesai }
@@ -39,9 +39,6 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF4EF),
 
-      // ============================================================
-      // TOP GREEN BAR (REUSABLE WIDGET)
-      // ============================================================
       appBar: const GreenTopBar(title: "LoFo USU"),
 
       body: Column(
@@ -62,9 +59,6 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
           const SizedBox(height: 14),
 
-          // ============================================================
-          // FILTER STATUS
-          // ============================================================
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Container(
@@ -114,9 +108,6 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
           const SizedBox(height: 14),
 
-          // ============================================================
-          // STREAM LIST RIWAYAT LAPORAN
-          // ============================================================
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
               stream: FirestoreService.instance.streamLaporanByUser(userId),

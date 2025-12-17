@@ -14,9 +14,6 @@ class StorageService {
     return "${ts}_$rnd.jpg";
   }
 
-  // ============================================================
-  // 1. UPLOAD MULTIPLE FOTO BARANG (Add Laporan)
-  // ============================================================
   Future<List<String>> uploadLaporanPhotos({
     required String userId,
     required List<XFile> files,
@@ -40,9 +37,6 @@ class StorageService {
     return urls;
   }
 
-  // ============================================================
-  // 2. UPLOAD SATU FOTO BARANG (Edit Laporan)
-  // ============================================================
   Future<String> uploadLaporanPhoto(File file, {String? userId}) async {
     try {
       final name = _uniqueName();
@@ -60,9 +54,6 @@ class StorageService {
     }
   }
 
-  // ============================================================
-  // 3. UPLOAD SATU FOTO DOKUMENTASI
-  // ============================================================
   Future<String> uploadDokumentasi(File file, {String? laporanId}) async {
     try {
       final name = _uniqueName();
@@ -80,35 +71,12 @@ class StorageService {
     }
   }
 
-  // ============================================================
-  // 🆕 4. UPLOAD MULTIPLE DOKUMENTASI (BARU)
-  // ============================================================
-  Future<List<String>> uploadMultipleDokumentasi({
-    required String laporanId,
-    required List<XFile> files,
-  }) async {
-    final urls = <String>[];
-
-    for (final file in files) {
-      final url = await uploadDokumentasi(File(file.path), laporanId: laporanId);
-      urls.add(url);
-    }
-
-    return urls;
-  }
-
-  // ============================================================
-  // UPDATE PROFILE PHOTO
-  // ============================================================
   Future<String> uploadProfilePhoto(String userId, File file) async {
     final ref = FirebaseStorage.instance.ref("profile_photos/$userId.jpg");
     await ref.putFile(file);
     return await ref.getDownloadURL();
   }
 
-  // ============================================================
-  // 5. UPLOAD KARTU IDENTITAS (KTM/KTP)
-  // ============================================================
   Future<String> uploadKartuIdentitas({
     required String userId,
     required XFile file,
@@ -125,9 +93,6 @@ class StorageService {
     }
   }
 
-  // ============================================================
-  // OPTIONAL: DELETE FILE
-  // ============================================================
   Future<void> deleteFile(String url) async {
     try {
       final ref = _storage.refFromURL(url);
@@ -137,9 +102,6 @@ class StorageService {
     }
   }
 
-  // ============================================================
-  // 🆕 OPTIONAL: DELETE FOTO DOKUMENTASI (BARU)
-  // ============================================================
   Future<void> deleteDokumentasi(String url) async {
     try {
       final ref = _storage.refFromURL(url);

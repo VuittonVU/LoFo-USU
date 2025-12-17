@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/laporan.dart';
 
@@ -10,9 +11,6 @@ class FirestoreService {
 
   CollectionReference get laporanRef => _db.collection('laporan');
 
-  // ============================================================
-  // CREATE LAPORAN
-  // ============================================================
   Future<void> createLaporan({
     required String userId,
     required String namaPelapor,
@@ -38,9 +36,7 @@ class FirestoreService {
       "lokasi": lokasi,
       "status_laporan": "Aktif",
 
-      // dokumentasi kosong di awal
       "dokumentasi": [],
-      // detail dokumentasi kosong
       "detail": null,
 
       "createdAt": FieldValue.serverTimestamp(),
@@ -48,17 +44,39 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // GET LAPORAN BY ID
-  // ============================================================
+  Future<void> updateStatusAdmin({
+    required String laporanId,
+    required String status,
+  }) async {
+    await FirebaseFirestore.instance
+        .collection('laporan')
+        .doc(laporanId)
+        .update({
+      "status_laporan": status,
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> submitKartuIdentitas({
+    required String userId,
+    required String imageUrl,
+  }) async {
+    await _db.collection("users").doc(userId).update({
+      "kartu_identitas": imageUrl,
+      "verifikasi_identitas": {
+        "status": "pending", // pending | approved | rejected
+        "checkedBy": null,
+        "checkedAt": null,
+      },
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<Laporan> getLaporanById(String id) async {
     final doc = await laporanRef.doc(id).get();
     return Laporan.fromDocument(doc);
   }
 
-  // ============================================================
-  // STREAM SEMUA LAPORAN
-  // ============================================================
   Stream<List<Map<String, dynamic>>> streamAllLaporan() {
     return laporanRef
         .orderBy("createdAt", descending: true)
@@ -74,9 +92,6 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // UPDATE LAPORAN TEXT
-  // ============================================================
   Future<void> updateLaporan(String id, Map<String, dynamic> data) async {
     await laporanRef.doc(id).update({
       ...data,
@@ -84,18 +99,12 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // UPDATE FOTO PROFIL USER (helper, bukan laporan)
-  // ============================================================
   Future<void> updateProfilePhoto(String userId, String url) async {
     await FirebaseFirestore.instance.collection("users").doc(userId).update({
       "fotoProfil": url,
     });
   }
 
-  // ============================================================
-  // UPDATE FOTO LAPORAN (FOTO BARANG)
-  // ============================================================
   Future<void> updateLaporanPhotos({
     required String laporanId,
     required List<String> fotoUrls,
@@ -106,20 +115,6 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // EDIT DOKUMENTASI (BUKTI SERAH TERIMA) – versi simple
-  // (Masih dipakai? kalau iya, ini hanya update list dokumentasi)
-  // ============================================================
-  Future<void> updateFotoBarang(String id, List<String> fotoBarang) async {
-    await laporanRef.doc(id).update({
-      "dokumentasi": fotoBarang,
-      "updatedAt": Timestamp.now(),
-    });
-  }
-
-  // ============================================================
-  // CLAIM LAPORAN → User Umum
-  // ============================================================
   Future<void> claimLaporan({
     required String laporanId,
     required String claimantId,
@@ -131,9 +126,6 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // BATALKAN CLAIM
-  // ============================================================
   Future<void> batalkanKlaim(String id) async {
     await laporanRef.doc(id).update({
       "id_pengklaim": null,
@@ -142,36 +134,31 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // KONFIRMASI SELESAI (PELAPOR) – versi lama (tanpa detail)
-  // Masih boleh dipakai kalau cuma mau set status tanpa dokumentasi
-  // ============================================================
-  Future<void> selesaiLaporan(String id) async {
-    await laporanRef.doc(id).update({
-      "status_laporan": "Selesai",
-      "updatedAt": Timestamp.now(),
-    });
-  }
-
-  // ============================================================
-  // KONFIRMASI SELESAI + SIMPAN DOKUMENTASI (dipakai EditDokumentasiScreen)
-  // ============================================================
   Future<void> confirmSelesai({
     required String laporanId,
     required List<String> dokumentasiUrls,
-    Map<String, dynamic>? detail,
+    required String namaBarang,
+    required String lokasi,
+    required String kategori,
+    required String deskripsi,
+    required String tanggal,
+    required String namaPengklaim,
   }) async {
-    await laporanRef.doc(laporanId).update({
-      "status_laporan": "Selesai",
-      "dokumentasi": dokumentasiUrls,
-      if (detail != null) "detail": detail,
-      "updatedAt": FieldValue.serverTimestamp(),
+    await _db.collection('laporan').doc(laporanId).update({
+      'status_laporan': 'Selesai',
+      'dokumentasi': dokumentasiUrls,
+
+      'nama_barang': namaBarang,
+      'lokasi': lokasi,
+      'kategori': kategori,
+      'deskripsi': deskripsi,
+      'tanggal': tanggal,
+      'nama_pengklaim': namaPengklaim,
+
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  // ============================================================
-  // STREAM REPORT HISTORY (KHUSUS USER PEMBUAT)
-  // ============================================================
   Stream<List<Map<String, dynamic>>> streamLaporanByUser(String userId) {
     return laporanRef
         .where('id_pengguna', isEqualTo: userId)
@@ -188,9 +175,6 @@ class FirestoreService {
     });
   }
 
-  // ============================================================
-  // DELETE LAPORAN (PELAPOR)
-  // ============================================================
   Future<void> deleteLaporan(String laporanId) async {
     final docRef = laporanRef.doc(laporanId);
 
@@ -199,9 +183,6 @@ class FirestoreService {
 
     final data = snapshot.data() as Map<String, dynamic>;
 
-    // ==========================================================
-    // HAPUS FOTO BARANG
-    // ==========================================================
     final List<String> fotoBarang =
     List<String>.from(data['foto_barang'] ?? []);
 
@@ -209,9 +190,6 @@ class FirestoreService {
       await _deleteFromStorage(url);
     }
 
-    // ==========================================================
-    // HAPUS DOKUMENTASI (JIKA ADA)
-    // ==========================================================
     final List<String> dokumentasi =
     List<String>.from(data['dokumentasi'] ?? []);
 
@@ -219,22 +197,88 @@ class FirestoreService {
       await _deleteFromStorage(url);
     }
 
-    // ==========================================================
-    // HAPUS DOKUMEN FIRESTORE
-    // ==========================================================
     await docRef.delete();
   }
 
-  // ============================================================
-  // HELPER: DELETE FILE DARI STORAGE (VIA URL)
-  // ============================================================
   Future<void> _deleteFromStorage(String downloadUrl) async {
     try {
       final ref = FirebaseStorage.instance.refFromURL(downloadUrl);
       await ref.delete();
     } catch (_) {
-      // ignore error (file sudah terhapus / tidak ditemukan)
     }
+  }
+
+  Future<void> reportUser({
+    required String reportedUid,
+    required String reason,
+    required String note,
+  }) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await _db.collection("account_reports").add({
+      "reporter_uid": uid,
+      "reported_uid": reportedUid,
+      "reason": reason,
+      "note": note,
+      "status": "pending",
+      "createdAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamAccountReports() {
+    return _db
+        .collection("account_reports")
+        .orderBy("createdAt", descending: true)
+        .snapshots()
+        .map((snap) {
+      return snap.docs.map((doc) {
+        return {
+          "id": doc.id,
+          ...doc.data(),
+        };
+      }).toList();
+    });
+  }
+
+  Future<void> updateAccountReportStatus({
+    required String reportId,
+    required String status,
+  }) async {
+    await _db.collection("account_reports").doc(reportId).update({
+      "status": status,
+      "reviewedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamPendingVerifications() {
+    return _db
+        .collection('users')
+        .where('verifikasi_identitas.status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snap) {
+      return snap.docs.map((doc) {
+        final data = doc.data();
+        return {
+          "uid": doc.id,
+          ...data,
+        };
+      }).toList();
+    });
+  }
+
+  Future<void> approveUser(String uid) async {
+    await _db.collection('users').doc(uid).update({
+      "status_verifikasi": "approved",
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> rejectUser(String uid) async {
+    await _db.collection('users').doc(uid).update({
+      "status_verifikasi": "rejected",
+      "updatedAt": FieldValue.serverTimestamp(),
+    });
   }
 
 }

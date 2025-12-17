@@ -24,17 +24,14 @@ class TopBarBackBtn extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            /// ========== BACK BUTTON ==========
             GestureDetector(
               onTap: () {
                 if (onBack != null) {
                   onBack!();
                 } else {
-                  /// fallback SAFE pop
                   if (context.canPop()) {
                     context.pop();
                   } else {
-                    // tidak melakukan apa-apa
                     debugPrint("⚠️ No previous route to pop.");
                   }
                 }
@@ -46,7 +43,6 @@ class TopBarBackBtn extends StatelessWidget {
               ),
             ),
 
-            /// ========== TITLE ==========
             Text(
               title,
               style: const TextStyle(
@@ -56,7 +52,6 @@ class TopBarBackBtn extends StatelessWidget {
               ),
             ),
 
-            /// Spacer supaya title tetap center
             const SizedBox(width: 28),
           ],
         ),

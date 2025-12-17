@@ -15,9 +15,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   bool notif = false;
   final _auth = AuthService.instance;
 
-  // ============================================================
-  // POPUP KONFIRMASI YA / TIDAK
-  // ============================================================
   void _confirmDialog({
     required String message,
     required VoidCallback onYes,
@@ -51,9 +48,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  // ============================================================
-  // BUTTON YA / TIDAK
-  // ============================================================
+
   Widget _choiceButton(String text, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -71,9 +66,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  // ============================================================
-  // DIALOG PASSWORD UNTUK DELETE ACCOUNT
-  // ============================================================
   void _showPasswordDialogForDelete() {
     final passCtrl = TextEditingController();
     final user = FirebaseAuth.instance.currentUser;
@@ -133,15 +125,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  // ============================================================
-  // UI
-  // ============================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE3F3E3),
 
-      // ========== TOP BAR BACK BTN ==========
       body: Column(
         children: [
           TopBarBackBtn(title: "LoFo USU"),
@@ -150,14 +138,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _settingTile(
-                  title: "Notifikasi / Pemberitahuan",
-                  icon:
-                  notif ? Icons.notifications_active : Icons.notifications_off,
-                  color: Colors.green,
-                  onTap: () => setState(() => notif = !notif),
-                ),
-
                 _settingTile(
                   title: "Keluar dari Akun",
                   icon: Icons.logout,
@@ -196,9 +176,6 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  // ============================================================
-  // TILE SETTING
-  // ============================================================
   Widget _settingTile({
     required String title,
     required IconData icon,

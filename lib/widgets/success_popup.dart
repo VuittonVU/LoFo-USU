@@ -37,7 +37,6 @@ class SuccessPopup extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // BUTTON "Selanjutnya"
             GestureDetector(
               onTap: onNext,
               child: Container(

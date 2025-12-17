@@ -11,9 +11,6 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
-  // ============================================================
-  // DELETE ACCOUNT (Bersihin Firestore + Storage)
-  // ============================================================
   Future<String?> deleteAccount({
     required String email,
     required String password,
@@ -24,26 +21,20 @@ class AuthService {
 
       final uid = user.uid;
 
-      // STEP 1 — Reauthenticate
       final cred = EmailAuthProvider.credential(
         email: email,
         password: password,
       );
       await user.reauthenticateWithCredential(cred);
 
-      // STEP 2 — Hapus semua laporan milik user
       await _deleteUserReports(uid);
 
-      // STEP 3 — Hapus foto profil user di Storage
       await FirebaseStorage.instance
           .ref("profile_photos/$uid.jpg")
           .delete()
           .catchError((_) {});
 
-      // STEP 4 — Hapus dokumen user dari Firestore
       await _db.collection("users").doc(uid).delete();
-
-      // STEP 5 — Delete akun FirebaseAuth
       await user.delete();
 
       return null;
@@ -52,9 +43,6 @@ class AuthService {
     }
   }
 
-  // ============================================================
-  // HAPUS SEMUA LAPORAN PUNYA USER
-  // ============================================================
   Future<void> _deleteUserReports(String uid) async {
     final qs = await _db
         .collection("laporan")
@@ -65,26 +53,20 @@ class AuthService {
       final data = doc.data();
       final laporanId = doc.id;
 
-      // Hapus semua foto barang
       final List<dynamic> fotoBarang = data["foto_barang"] ?? [];
       for (var url in fotoBarang) {
         await _deleteStorageFile(url);
       }
 
-      // Hapus semua foto dokumentasi
       final List<dynamic> dok = data["dokumentasi"] ?? [];
       for (var url in dok) {
         await _deleteStorageFile(url);
       }
 
-      // Hapus dokument Firestore
       await _db.collection("laporan").doc(laporanId).delete();
     }
   }
 
-  // ============================================================
-  // HAPUS FILE DI Firebase Storage
-  // ============================================================
   Future<void> _deleteStorageFile(String url) async {
     try {
       final ref = FirebaseStorage.instance.refFromURL(url);
@@ -94,9 +76,6 @@ class AuthService {
     }
   }
 
-  // ============================================================
-  // SIGN UP
-  // ============================================================
   Future<String?> signUp(String email, String password) async {
     try {
       final cred = await _auth.createUserWithEmailAndPassword(
@@ -111,25 +90,21 @@ class AuthService {
     }
   }
 
-  // LOGIN
   Future<String?> signIn(String email, String password) async {
-    try {
-      final cred = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    final cred = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      if (!cred.user!.emailVerified) {
-        await _auth.signOut();
-        return "Email belum diverifikasi. Cek inbox / spam.";
-      }
-      return null;
-    } on FirebaseAuthException catch (e) {
-      return e.message;
+    final isAdmin = email == "admin@lofo.app";
+
+    if (!isAdmin && !cred.user!.emailVerified) {
+      return "Email belum diverifikasi.";
     }
+
+    return null;
   }
 
-  // CREATE USER DOCUMENT IF NOT EXISTS
   Future<void> createUserDocumentIfNotExists(User user) async {
     final doc = _db.collection('users').doc(user.uid);
     if (!(await doc.get()).exists) {
@@ -146,7 +121,6 @@ class AuthService {
     }
   }
 
-  // LOGOUT
   Future<void> signOut() async {
     await _auth.signOut();
   }

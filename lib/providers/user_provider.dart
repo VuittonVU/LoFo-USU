@@ -11,7 +11,6 @@ class UserProvider extends ChangeNotifier {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
 
-  /// Call once after login
   Future<void> loadUser() async {
     final current = _auth.currentUser;
     if (current == null) return;
@@ -28,7 +27,6 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Real-time listener (opsional)
   void listenUser() {
     final current = _auth.currentUser;
     if (current == null) return;
@@ -41,6 +39,5 @@ class UserProvider extends ChangeNotifier {
     });
   }
 
-  /// Refresh manual
   Future<void> refresh() async => loadUser();
 }

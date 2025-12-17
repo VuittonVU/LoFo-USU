@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../config/routes.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/item_status_badge.dart';
 
@@ -36,18 +37,13 @@ class LaporanUmumScreen extends StatefulWidget {
 }
 
 class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
-  int currentIndex = 0;
   bool loading = false;
-
-  // 🔑 STATE DINAMIS (INI KUNCI FIX)
   String? statusLaporan;
   String? klaimerId;
 
   String get currentUid => FirebaseAuth.instance.currentUser?.uid ?? "";
   bool get isCreator => currentUid == widget.ownerId;
-  bool get isClaimed => klaimerId != null;
   bool get isClaimer => klaimerId == currentUid;
-
   String get currentStatus => statusLaporan ?? widget.status;
 
   @override
@@ -56,9 +52,6 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     _fetchLaporanState();
   }
 
-  // ============================================================
-  // FETCH STATE TERBARU DARI FIRESTORE
-  // ============================================================
   Future<void> _fetchLaporanState() async {
     final laporan =
     await FirestoreService.instance.getLaporanById(widget.laporanId);
@@ -66,8 +59,8 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     if (!mounted) return;
 
     setState(() {
-      klaimerId = laporan.idPengklaim;
       statusLaporan = laporan.statusLaporan;
+      klaimerId = laporan.idPengklaim;
     });
   }
 
@@ -75,11 +68,8 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFEFF4EF),
-
-      // APPBAR
       appBar: AppBar(
         backgroundColor: const Color(0xFF4CAF50),
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => context.pop(),
@@ -90,38 +80,31 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
         ),
         centerTitle: true,
       ),
-
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           16,
           16,
           16,
-          MediaQuery.of(context).padding.bottom + 80,
+          MediaQuery.of(context).padding.bottom + 120,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMainCard(),
+            _mainCard(),
             const SizedBox(height: 16),
-            _buildDetailCard(),
+            _detailCard(),
             const SizedBox(height: 16),
-            _buildDescriptionCard(),
+            _descriptionCard(),
             const SizedBox(height: 16),
-            _buildInfoStatus(),
+            _infoStatus(),
           ],
         ),
       ),
-
       bottomNavigationBar: _bottomAction(),
     );
   }
 
-  // ============================================================
-  // MAIN CARD
-  // ============================================================
-  Widget _buildMainCard() {
-    final images = widget.images;
-
+  Widget _mainCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _whiteDeco(),
@@ -132,23 +115,10 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
             borderRadius: BorderRadius.circular(12),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: _buildImageCarousel(images),
+              child: _singleImage(widget.images),
             ),
           ),
-
-          const SizedBox(height: 10),
-
-          if (images.length > 1)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                images.length,
-                    (i) => _Dot(isActive: i == currentIndex),
-              ),
-            ),
-
-          const SizedBox(height: 10),
-
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -164,8 +134,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
               ItemStatusBadge(status: currentStatus),
             ],
           ),
-
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             "Dilaporkan oleh: ${widget.reporterName}",
             style: TextStyle(color: Colors.grey.shade700),
@@ -175,10 +144,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     );
   }
 
-  // ============================================================
-  // IMAGE CAROUSEL
-  // ============================================================
-  Widget _buildImageCarousel(List<String> images) {
+  Widget _singleImage(List<String> images) {
     if (images.isEmpty) {
       return Container(
         color: Colors.grey.shade300,
@@ -186,17 +152,15 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
       );
     }
 
-    return PageView.builder(
-      itemCount: images.length,
-      onPageChanged: (i) => setState(() => currentIndex = i),
-      itemBuilder: (_, i) => GestureDetector(
-        onTap: () => _openFullImage(images[i]),
-        child: Image.network(
-          images[i],
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) =>
-          const Center(child: Icon(Icons.broken_image, size: 40)),
-        ),
+    final url = images.first;
+
+    return GestureDetector(
+      onTap: () => _openFullImage(url),
+      child: Image.network(
+        url,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+        const Center(child: Icon(Icons.broken_image)),
       ),
     );
   }
@@ -210,14 +174,15 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     );
   }
 
-  // ============================================================
-  Widget _buildDetailCard() {
+  Widget _detailCard() {
     return _whiteBox(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Detail",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const Text(
+            "Detail",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           _detailRow(Icons.calendar_today, "Tanggal ditemukan:", widget.dateFound),
           const SizedBox(height: 8),
@@ -241,24 +206,22 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     );
   }
 
-  // ============================================================
-  Widget _buildDescriptionCard() {
+  Widget _descriptionCard() {
     return _whiteBox(
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Deskripsi",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const Text(
+            "Deskripsi",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
-          Container(
+          SizedBox(
             width: double.infinity,
             child: Text(
               widget.description,
               textAlign: TextAlign.justify,
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                height: 1.4,
-              ),
+              style: TextStyle(color: Colors.grey.shade800, height: 1.4),
             ),
           ),
         ],
@@ -266,8 +229,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     );
   }
 
-  // ============================================================
-  Widget _buildInfoStatus() {
+  Widget _infoStatus() {
     String msg;
     Color color;
 
@@ -296,26 +258,63 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     );
   }
 
-  // ============================================================
-  // BOTTOM ACTION
-  // ============================================================
   Widget _bottomAction() {
     if (isCreator) return const SizedBox.shrink();
-    if (currentStatus == "Selesai") return const SizedBox.shrink();
 
-    if (isClaimer) {
-      return _button(
-        label: "Batalkan Klaim",
-        color: Colors.red,
-        onTap: _cancelClaim,
-      );
-    }
-
-    if (currentStatus == "Aktif" && !isClaimed) {
+    if (currentStatus == "Aktif") {
       return _button(
         label: "Ini milik saya",
         color: const Color(0xFF4CAF50),
         onTap: _claimItem,
+      );
+    }
+
+    if (currentStatus == "Dalam Proses" && isClaimer) {
+      return SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _button(
+                  label: "Lihat Profil Pelapor",
+                  color: Colors.blue,
+                  onTap: () {
+                    context.push(
+                      AppRoutes.profile,
+                      extra: widget.ownerId,
+                    );
+                  },
+                ),
+              ),
+              _button(
+                label: "Batalkan Klaim",
+                color: Colors.red,
+                onTap: () async {
+                  await FirestoreService.instance
+                      .batalkanKlaim(widget.laporanId);
+                  await _fetchLaporanState();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (currentStatus == "Selesai") {
+      return _button(
+        label: "Lihat Dokumentasi",
+        color: Colors.teal,
+        onTap: () {
+          context.push(
+            AppRoutes.dokumentasi,
+            extra: widget.laporanId,
+          );
+        },
       );
     }
 
@@ -324,7 +323,6 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
 
   Future<void> _claimItem() async {
     if (loading) return;
-
     setState(() => loading = true);
 
     try {
@@ -332,39 +330,12 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
         laporanId: widget.laporanId,
         claimantId: currentUid,
       );
-
       await _fetchLaporanState();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal klaim laporan: $e")),
-        );
-      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
-  Future<void> _cancelClaim() async {
-    if (loading) return;
-
-    setState(() => loading = true);
-
-    try {
-      await FirestoreService.instance.batalkanKlaim(widget.laporanId);
-      await _fetchLaporanState();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal membatalkan klaim: $e")),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  // ============================================================
   Widget _button({
     required String label,
     required Color color,
@@ -373,7 +344,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -385,17 +356,7 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: loading
-                ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor:
-                AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-                : Text(
+            child: Text(
               label,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
@@ -431,9 +392,6 @@ class _LaporanUmumScreenState extends State<LaporanUmumScreen> {
   }
 }
 
-// ============================================================
-// FULL IMAGE VIEW
-// ============================================================
 class FullImageView extends StatelessWidget {
   final String imageUrl;
   const FullImageView({super.key, required this.imageUrl});
@@ -461,27 +419,6 @@ class FullImageView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-// DOT INDICATOR
-// ============================================================
-class _Dot extends StatelessWidget {
-  final bool isActive;
-  const _Dot({required this.isActive});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      height: 8,
-      width: 8,
-      decoration: BoxDecoration(
-        color: isActive ? Colors.black : Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(4),
       ),
     );
   }

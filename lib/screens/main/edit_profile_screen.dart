@@ -25,7 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final phoneCtrl = TextEditingController();
   final igCtrl = TextEditingController();
   final waCtrl = TextEditingController();
-  final emailCtrl = TextEditingController(); // <–– email tidak auto-fill!
+  final emailCtrl = TextEditingController();
 
   bool loading = false;
   String photoUrl = "";
@@ -54,7 +54,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     phoneCtrl.text = data["telepon"] ?? "";
     igCtrl.text = data["instagram"] ?? "";
     waCtrl.text = data["whatsapp"] ?? "";
-    emailCtrl.text = data["email_kontak"] ?? ""; // <–– ambil dari Firestore saja
+    emailCtrl.text = data["email_kontak"] ?? "";
     photoUrl = data["fotoProfil"] ?? "";
 
     setState(() {});
@@ -68,7 +68,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // ====================== VALIDATOR =========================
 
   bool get validName => nameCtrl.text.trim().isNotEmpty;
   bool get validNim => nimCtrl.text.trim().length >= 8;
@@ -80,7 +79,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool get formValid =>
       validName && validNim && validIG && validPhone && validEmail;
 
-  // ====================== SAVE ==============================
 
   Future<void> save() async {
     if (!formValid) {
@@ -103,7 +101,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String uploadedUrl = photoUrl;
 
     try {
-      // Upload foto baru
       if (newPhoto != null) {
         final ref =
         FirebaseStorage.instance.ref("profile_photos/${user.uid}.jpg");
@@ -111,7 +108,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         uploadedUrl = await ref.getDownloadURL();
       }
 
-      // Update Firestore
       await FirebaseFirestore.instance.collection("users").doc(user.uid).update({
         "nama": nameCtrl.text.trim(),
         "prodi": majorCtrl.text.trim(),
@@ -125,12 +121,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         "updatedAt": FieldValue.serverTimestamp(),
       });
 
-      // Update FirebaseAuth display name + photo
       await user.updateDisplayName(nameCtrl.text.trim());
       await user.updatePhotoURL(uploadedUrl);
 
       if (mounted) {
-        context.pop(true); // return true → ProfileScreen refresh
+        context.pop(true);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,8 +136,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) setState(() {});
     }
   }
-
-  // ====================== UI ==============================
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +196,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             const SizedBox(height: 20),
 
-            // FOTO PROFIL
             Center(
               child: GestureDetector(
                 onTap: pickPhoto,
@@ -245,7 +237,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
             const SizedBox(height: 25),
 
-            // SECTION 1
             _sectionForm(children: [
               _label("Nama"),
               _editField(nameCtrl),
@@ -307,7 +298,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // ============ Helper UI Widgets ===============
 
   Widget _sectionForm({required List<Widget> children}) {
     return Container(

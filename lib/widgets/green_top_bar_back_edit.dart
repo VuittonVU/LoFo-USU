@@ -15,7 +15,7 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90, // match HomeScreen
+      height: 90,
       width: double.infinity,
       color: const Color(0xFF4CAF50),
       child: SafeArea(
@@ -25,7 +25,6 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // --- TOMBOL BACK ---
               GestureDetector(
                 onTap: onBackPressed ?? () => Navigator.pop(context),
                 child: const Icon(
@@ -35,7 +34,6 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // --- JUDUL ---
               Text(
                 title,
                 style: const TextStyle(
@@ -45,12 +43,11 @@ class GreenTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // --- TOMBOL EDIT ---
               GestureDetector(
                 onTap: onEditPressed,
                 child: Icon(
                   Icons.edit,
-                  color: onEditPressed != null ? Colors.white : Colors.transparent, // Sembunyikan jika null
+                  color: onEditPressed != null ? Colors.white : Colors.transparent,
                   size: 24,
                 ),
               ),

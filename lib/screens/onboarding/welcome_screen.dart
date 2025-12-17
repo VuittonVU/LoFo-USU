@@ -41,7 +41,6 @@ class WelcomeScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // Tombol Daftar
               GestureDetector(
                 onTap: () => context.go(AppRoutes.signUp),
                 child: Container(
@@ -66,7 +65,6 @@ class WelcomeScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // Tombol Masuk
               GestureDetector(
                 onTap: () => context.go(AppRoutes.signIn),
                 child: Container(

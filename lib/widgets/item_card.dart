@@ -40,7 +40,7 @@ class ItemCard extends StatelessWidget {
       case "Dalam Proses":
         return Colors.orange;
       case "Selesai":
-        return Colors.blue;
+        return const Color(0xFF1B5E20);
       default:
         return Colors.grey;
     }
@@ -82,9 +82,6 @@ class ItemCard extends StatelessWidget {
           ],
         ),
 
-        // ============================
-        // ROW MAIN LAYOUT
-        // ============================
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -108,12 +105,10 @@ class ItemCard extends StatelessWidget {
 
             const SizedBox(width: 14),
 
-            // TEXT AREA
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // TITLE + STATUS
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -150,7 +145,6 @@ class ItemCard extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // FAKULTAS
                   Text(
                     fakultas,
                     style: const TextStyle(
@@ -162,7 +156,6 @@ class ItemCard extends StatelessWidget {
 
                   const SizedBox(height: 4),
 
-                  // TANGGAL
                   Text(
                     tanggal,
                     style: const TextStyle(
