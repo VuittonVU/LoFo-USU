@@ -36,21 +36,21 @@ Setiap laporan dapat diberi status, seperti “Sedang Dicari”, “Menunggu Kon
 ### Riwayat Laporan
 Pengguna dapat melihat riwayat laporan yang pernah dibuat, serta menandai laporan sebagai “Selesai” jika barang sudah ditemukan atau dikembalikan.
 
---
+---
 
 ## SRS (Software Requirements Specification)
 [SRS](https://docs.google.com/document/d/1WFEvvB8h39cLeA0XvoEQibSMAk4ntbeu/edit?usp=sharing&ouid=101897502889036919072&rtpof=true&sd=true)
 
---
+---
 
 ## Figma
 [Figma](https://www.figma.com/design/RqXEUpz9lNuugtPEOROpWy/LoFo-USU?node-id=0-1&p=f&t=DAMPWftsL0yZjev8-0)
 
---
+---
 
 ## GitHub
 [GitHub](https://github.com/VuittonVU/LoFo-USU)
 
---
+---
 
 Terima kasih!
